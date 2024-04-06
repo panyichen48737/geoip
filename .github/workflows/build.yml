@@ -126,8 +126,8 @@ jobs:
           grep -v '::' ./output/text/cn.txt | sed '/^\s*$/d' > ./ips/cn_ipv4.txt
           grep '::' ./output/text/cn.txt > ./ips/cn_ipv6.txt
           for file in $(ls ./output/text/ | sed 's/\..*//'); do
-            grep -v '::' "./output/text/${file}.txt" | sed '/^\s*$/d' | sed 's/^/  - IP-CIDR,/' > "./ips/${file}.list"
-          grep '::' "./output/text/${file}.txt" | sed 's/^/  - IP-CIDR6,/' >> "./ips/${file}.list"
+            grep -v '::' "./output/text/${file}.txt" | sed '/^\s*$/d' | sed 's/^/IP-CIDR,/' > "./ips/${file}.list"
+          grep '::' "./output/text/${file}.txt" | sed 's/^/IP-CIDR6,/' >> "./ips/${file}.list"
           done
           rm -rf ./output*
 
