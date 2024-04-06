@@ -59,7 +59,6 @@ jobs:
 
       - name: Generate netflix
         run: |
-          mkdir -p ./clash/ ./sing-box/ ./ips
           curl -sSL ${netflix} | grep -v '#' | grep 'IP-CIDR' | sed 's/[^,]*,//' | sed 's/,[^,]*$//' >> ./data/netflix
 
       - name: Generate telegram
@@ -111,6 +110,7 @@ jobs:
 
       - name: Move files
         run: |
+          mkdir -p ./clash/ ./sing-box/
           cd ./output/dat/ || exit 1
           for file in $(ls *.dat *.metadb); do
             install -Dp "./${file}" ../../clash/
@@ -119,12 +119,16 @@ jobs:
             install -Dp "./${file}" ../../sing-box/
           done
 
-      - name: Move files to branchs
+      - name: Move and generate files to branchs
         run: |
+          mkdir -p ./ips/
           cp -f ./output/maxmind/*.mmdb ./clash/
-          grep -v '::' ./output/text/cn.txt > ./output/text/cn_ipv4.txt
-          grep '::' ./output/text/cn.txt > ./output/text/cn_ipv6.txt
-          cp -rf ./output/text/* ./ips/
+          grep -v '::' ./output/text/cn.txt | sed '/^\s*$/d' > ./ips/cn_ipv4.txt
+          grep '::' ./output/text/cn.txt > ./ips/cn_ipv6.txt
+          for file in $(ls ./output/text/ | sed 's/\..*//'); do
+            grep -v '::' "./output/text/${file}.txt" | sed '/^\s*$/d' | sed 's/^/  - IP-CIDR,/' > "./ips/${file}.list"
+          grep '::' "./output/text/${file}.txt" | sed 's/^/  - IP-CIDR6,/' >> "./ips/${file}.list"
+          done
           rm -rf ./output*
 
       - name: Commit and push `ips` branch
