@@ -1,7 +1,7 @@
 # 一、 文件说明
 ## 1. 规则集文件类型
 ① [Clash](https://github.com/Dreamacro/clash) geodata 规则集文件，包括：Country.mmdb、geoip.dat 和 geoip.metadb（仅限 [mihomo 内核](https://github.com/MetaCubeX/mihomo)）等  
-② Clash rule-set 规则集文件（.list 格式），适用于 `behavior: classical` 且 `format: text` 的使用场景，包含 `IP-CIDR` 和 `IP-CIDR6` 规则类型
+② Clash rule-set 规则集文件（.list 格式），适用于 `behavior: classical` 且 `format: text` 的使用场景，包含 `IP-CIDR` 和 `IP-CIDR6` 规则类型  
 ③ [sing-box](https://github.com/SagerNet/sing-box) geodata 规则集文件，包括：geoip.db 等
 ## 2. 数据源
 ① 每天凌晨 2 点（北京时间）自动构建，根据 [Loyalsoldier/geoip](https://github.com/Loyalsoldier/geoip) 进行深度定制，可点击查看包含的 [IP 段列表](https://github.com/DustinWin/geoip/tree/ips)  
