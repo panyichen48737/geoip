@@ -122,13 +122,22 @@ jobs:
         run: |
           mkdir -p ./ips/
           cp -f ./output/maxmind/*.mmdb ./clash/
-          grep -v '::' ./output/text/cn.txt | sed '/^\s*$/d' > ./ips/cn_ipv4.txt
-          grep '::' ./output/text/cn.txt > ./ips/cn_ipv6.txt
           for file in $(ls ./output/text/ | sed 's/\..*//'); do
             grep -v '::' "./output/text/${file}.txt" | sed '/^\s*$/d' | sed 's/^/IP-CIDR,/' > "./ips/${file}ip.list"
             grep '::' "./output/text/${file}.txt" | sed 's/^/IP-CIDR6,/' >> "./ips/${file}ip.list"
           done
           rm -rf ./output*
+
+      - name: Release and upload `ips` assets
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          release_name: ips
+          tag: ips
+          overwrite: true
+          body: "[Clash](https://github.com/Dreamacro/clash) 配置文件"
+          file_glob: true
+          file: ./ips/*
 
       - name: Commit and push `ips` branch
         run: |
