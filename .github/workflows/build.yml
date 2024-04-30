@@ -59,16 +59,16 @@ jobs:
 
       - name: Generate netflix
         run: |
-          curl -sSL ${netflix} | grep -v '#' | grep 'IP-CIDR' | awk -F',' '{print $2}' >> ./data/netflix
+          curl -sSL ${netflix} | grep -v '#' | grep 'IP-' | awk -F',' '{print $2}' >> ./data/netflix
 
       - name: Generate telegram
         run: |
           curl -sSL ${telegram1} >> ./data/telegram
-          curl -sSL ${telegram2} | grep -v '#' | grep 'IP-CIDR' | awk -F',' '{print $2}' >> ./data/telegram
+          curl -sSL ${telegram2} | grep -v '#' | grep 'IP-' | awk -F',' '{print $2}' >> ./data/telegram
 
       - name: Generate private
         run: |
-          curl -sSL ${private1} | grep -v '#' | grep 'IP-CIDR' | awk -F',' '{print $2}' > ./data/private
+          curl -sSL ${private1} | grep -v '#' | grep 'IP-' | awk -F',' '{print $2}' > ./data/private
           curl -sSL ${private2} | grep -E '\/[^A-Za-z]+\/' | awk -F'[/:]' '{print $4}' >> ./data/private
           curl -sSL ${private2} | grep '::' | awk -F'[][]' '{print $2}' >> ./data/private
 
@@ -120,13 +120,15 @@ jobs:
 
       - name: Move and generate files to branchs
         run: |
-          mkdir -p ./ips/
-          cp -f ./output/maxmind/*.mmdb ./clash/
+          mkdir -p ./tmp/ ./ips/
+          wget -P ./tmp/ "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-ASN&license_key=${{ secrets.LICENSE_KEY }}&suffix=tar.gz"
+          tar -zxf ./tmp/*.tar.gz -C ./tmp/
+          cp -f ./tmp/GeoLite*/*.mmdb ./output/maxmind/*.mmdb ./clash/
           for file in $(ls ./output/text/ | sed 's/\..*//'); do
-            grep -v '::' "./output/text/${file}.txt" | sed '/^\s*$/d' | sed 's/^/IP-CIDR,/' > "./ips/${file}ip.list"
+            grep -Ev '::|IP-' "./output/text/${file}.txt" | sed '/^\s*$/d' | sed 's/^/IP-CIDR,/' > "./ips/${file}ip.list"
             grep '::' "./output/text/${file}.txt" | sed 's/^/IP-CIDR6,/' >> "./ips/${file}ip.list"
           done
-          rm -rf ./output*
+          rm -rf ./tmp* ./output*
 
       - name: Release and upload `ips` assets
         uses: svenstaro/upload-release-action@v2
