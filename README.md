@@ -1,6 +1,6 @@
 # 一、 文件说明
 ## 1. 规则集文件类型
-① [Clash](https://github.com/Dreamacro/clash) geodata 规则集文件，包括：Country.mmdb、geoip.dat 和 geoip.metadb（仅限 [mihomo 内核](https://github.com/MetaCubeX/mihomo)）等  
+① [Clash](https://github.com/Dreamacro/clash) geodata 规则集文件，包括：geoip.dat、Country.mmdb 和 geoip.metadb、ASN.mmdb（仅限 [mihomo 内核](https://github.com/MetaCubeX/mihomo)）等  
 ② Clash rule-set 规则集文件（.list 格式），适用于 `behavior: classical` 且 `format: text` 的使用场景，包含 `IP-CIDR` 和 `IP-CIDR6` 规则类型  
 ③ [sing-box](https://github.com/SagerNet/sing-box) geodata 规则集文件，包括：geoip.db 等
 ## 2. 数据源
@@ -97,7 +97,7 @@
 </table>
 
 # 三、 文件导入
-① 导入 Linux 端（以 [ShellCrash](https://github.com/juewuy/ShellCrash) 导入 geoip.dat、Country.mmdb、geoip.metadb 和 geoip.db 为例）  
+① 导入 Linux 端（以 [ShellCrash](https://github.com/juewuy/ShellCrash) 导入 geoip.dat、Country.mmdb、geoip.metadb、ASN.mmdb 和 geoip.db 为例）  
 连接 SSH 后执行如下命令：
 ```
 # Clash 内核
@@ -105,11 +105,12 @@ curl -o $CRASHDIR/GeoIP.dat -L https://cdn.jsdelivr.net/gh/DustinWin/geoip@clash
 curl -o $CRASHDIR/Country.mmdb -L https://cdn.jsdelivr.net/gh/DustinWin/geoip@clash/Country.mmdb
 # mihomo 内核
 curl -o $CRASHDIR/geoip.metadb -L https://cdn.jsdelivr.net/gh/DustinWin/geoip@clash/geoip.metadb
+curl -o $CRASHDIR/ASN.mmdb -L https://cdn.jsdelivr.net/gh/DustinWin/geoip@clash/ASN.mmdb
 # sing-box 内核
 curl -o $CRASHDIR/geoip.db -L https://cdn.jsdelivr.net/gh/DustinWin/geoip@sing-box/geoip.db
 $CRASHDIR/start.sh restart
 ```
-② 导入 Windows 端（以 [Clash Verge](https://github.com/clash-verge-rev/clash-verge-rev) 导入 geoip.dat、Country.mmdb 和 geoip.metadb 为例）  
+② 导入 Windows 端（以 [Clash Verge](https://github.com/clash-verge-rev/clash-verge-rev) 导入 geoip.dat、Country.mmdb、geoip.metadb 和 ASN.mmdb 为例）  
 以管理员身份运行 CMD，执行如下命令：
 ```
 taskkill /f /t /im "Clash Verge*"
@@ -118,5 +119,6 @@ taskkill /f /t /im clash-meta*
 curl -o %APPDATA%\io.github.clash-verge-rev.clash-verge-rev\geoip.dat -L https://cdn.jsdelivr.net/gh/DustinWin/geoip@clash/geoip.dat
 curl -o %APPDATA%\io.github.clash-verge-rev.clash-verge-rev\Country.mmdb -L https://cdn.jsdelivr.net/gh/DustinWin/geoip@clash/Country.mmdb
 curl -o %APPDATA%\io.github.clash-verge-rev.clash-verge-rev\geoip.metadb -L https://cdn.jsdelivr.net/gh/DustinWin/geoip@clash/geoip.metadb
+curl -o %APPDATA%\io.github.clash-verge-rev.clash-verge-rev\ASN.mmdb -L https://cdn.jsdelivr.net/gh/DustinWin/geoip@clash/ASN.mmdb
 pause
 ```
