@@ -81,7 +81,7 @@ jobs:
           curl -sSL ${cn1} >> ./data/cn
           curl -sSL ${cn2} >> ./data/cn
           curl -sSL ${cn3} >> ./data/cn
-          curl -sSL ${cn4} | grep -v '#' | sed '/^\s*$/d' | awk -F',' '{print $2}' >> ./data/cn
+          curl -sSL ${cn4} | grep -v '#' | grep 'IP-CIDR' | awk -F',' '{print $2}' >> ./data/cn
 
       - name: Build geoip files
         run: |
