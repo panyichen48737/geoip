@@ -42,9 +42,10 @@ jobs:
           unzip -o ./tmp/*.zip
           mv -f ./tmp/GeoLite2* geolite2
           sed -i -n '/,country_iso_code,\|,CN,/p' ./geolite2/GeoLite2-Country-Locations-en.csv
-          wget -P ./tmp/ "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-ASN&license_key=${{LICENSE_KEY}}&suffix=tar.gz"
+          wget -P ./tmp/ "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-ASN&license_key=${LICENSE_KEY}&suffix=tar.gz"
           tar -zxf ./tmp/*.tar.gz -C ./tmp/
           cp -f ./tmp/GeoLite*/*.mmdb ./output/maxmind/
+          rm -rf ./tmp*
 
       - name: Set variables
         run: |
@@ -129,7 +130,7 @@ jobs:
             grep -v '::' "./output/text/${file}.txt" | sed '/^\s*$/d' | sed 's/^/IP-CIDR,/' > "./ips/${file}ip.list"
             grep '::' "./output/text/${file}.txt" | sed 's/^/IP-CIDR6,/' >> "./ips/${file}ip.list"
           done
-          rm -rf ./tmp* ./output*
+          rm -rf ./output*
 
       - name: Release and upload `ips` assets
         uses: svenstaro/upload-release-action@v2
