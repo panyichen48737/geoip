@@ -39,7 +39,7 @@ jobs:
         run: |
           mkdir -p ./tmp/
           curl -o ./tmp/GeoLite2-Country-CSV.zip -L "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country-CSV&license_key=${LICENSE_KEY}&suffix=zip"
-          unzip -o ./tmp/GeoLite2-Country-CSV.zip
+          unzip -o ./tmp/GeoLite2-Country-CSV.zip -d ./tmp/
           cp -f ./tmp/GeoLite2*/*.csv ./geolite2/
           sed -i -n '/,country_iso_code,\|,CN,/p' ./geolite2/GeoLite2-Country-Locations-en.csv
           curl -o ./tmp/GeoLite2-ASN.tar.gz -L "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-ASN&license_key=${LICENSE_KEY}&suffix=tar.gz"
