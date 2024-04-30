@@ -37,11 +37,14 @@ jobs:
         env:
           LICENSE_KEY: ${{ secrets.MAXMIND_GEOLITE2_LICENSE }}
         run: |
-          curl -o GeoLite2-Country-CSV.zip -L "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country-CSV&license_key=${LICENSE_KEY}&suffix=zip"
-          unzip -o GeoLite2-Country-CSV.zip
-          rm -f GeoLite2-Country-CSV.zip
-          mv -f GeoLite2* geolite2
+          mkdir -p ./tmp/
+          wget -P ./tmp/ "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country-CSV&license_key=${LICENSE_KEY}&suffix=zip"
+          unzip -o ./tmp/*.zip
+          mv -f ./tmp/GeoLite2* geolite2
           sed -i -n '/,country_iso_code,\|,CN,/p' ./geolite2/GeoLite2-Country-Locations-en.csv
+          wget -P ./tmp/ "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-ASN&license_key=${{LICENSE_KEY}}&suffix=tar.gz"
+          tar -zxf ./tmp/*.tar.gz -C ./tmp/
+          cp -f ./tmp/GeoLite*/*.mmdb ./output/maxmind/
 
       - name: Set variables
         run: |
@@ -90,13 +93,6 @@ jobs:
           for name in $(ls *.mmdb); do
             $(go env GOPATH)/bin/mmdbverify -file ${name}
           done
-
-      - name: Download GeoLite2 ASN
-        run: |
-          mkdir -p ./tmp/
-          wget -P ./tmp/ "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-ASN&license_key=${{ secrets.LICENSE_KEY }}&suffix=tar.gz"
-          tar -zxf ./tmp/*.tar.gz -C ./tmp/
-          cp -f ./tmp/GeoLite*/*.mmdb ./output/maxmind/
 
       - name: Get geoip-all.dat and Country-all.mmdb relative files
         run: |
