@@ -132,7 +132,6 @@ jobs:
             grep -v '::' "./output/text/${file}.txt" | sed '/^\s*$/d' | sed 's/^/IP-CIDR,/' > "./tmp/${file}.list"
             grep '::' "./output/text/${file}.txt" | sed 's/^/IP-CIDR6,/' >> "./tmp/${file}.list"
             curl -sSL "$(eval echo "\${${file}}")" | grep -v '#' | grep 'IP-ASN,' | sed 's/,no-resolve$//' >> "./tmp/${file}.list"
-            curl -sSL "$(eval echo "\${${file}1}")" | grep -v '#' | grep 'IP-ASN,' | sed 's/,no-resolve$//' >> "./tmp/${file}.list"
             grep "${file}" ./asn.csv | sed -e "s/^${file},//" -e 's/AS//g' | awk -F'|' '{for(i=1; i<=NF; i++) print "IP-ASN," $i}' >> "./tmp/${file}.list"
             sort --ignore-case -u "./tmp/${file}.list" > "./ips/${file}ip.list"
           done
