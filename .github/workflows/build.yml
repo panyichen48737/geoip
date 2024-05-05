@@ -132,8 +132,8 @@ jobs:
           for file in $(ls ./output/text/ | sed 's/\..*//'); do
             grep -v '::' "./output/text/${file}.txt" | sed '/^\s*$/d' | sed 's/^/IP-CIDR,/' > "./ips/${file}ip.list"
             grep '::' "./output/text/${file}.txt" | sed 's/^/IP-CIDR6,/' >> "./ips/${file}ip.list"
-            curl -sSL ${{file}} | grep -v '#' | grep 'IP-ASN,' | sed 's/,no-resolve$//' >> "./ips/${file}ip.list"
-            curl -sSL ${{file}1} | grep -v '#' | grep 'IP-ASN,' | sed 's/,no-resolve$//' >> "./ips/${file}ip.list"
+            curl -sSL "$(eval echo "\${${file}}")" | grep -v '#' | grep 'IP-ASN,' | sed 's/,no-resolve$//' >> "./ips/${file}ip.list"
+            curl -sSL "$(eval echo "\${${file}1}")" | grep -v '#' | grep 'IP-ASN,' | sed 's/,no-resolve$//' >> "./ips/${file}ip.list"
           done
           rm -rf ./output*
 
