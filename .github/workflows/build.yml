@@ -47,7 +47,6 @@ jobs:
           curl -o ./tmp/GeoLite2-ASN.tar.gz -L "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-ASN&license_key=${LICENSE_KEY}&suffix=tar.gz"
           tar -zxf ./tmp/GeoLite2-ASN.tar.gz -C ./tmp/
           cp -f ./tmp/GeoLite*/*.mmdb ./output/maxmind/ASN.mmdb
-          rm -rf ./tmp*
 
       - name: Set variables
         run: |
@@ -130,12 +129,14 @@ jobs:
           mkdir -p ./ips/
           cp -f ./output/maxmind/*.mmdb ./clash/
           for file in $(ls ./output/text/ | sed 's/\..*//'); do
-            grep -v '::' "./output/text/${file}.txt" | sed '/^\s*$/d' | sed 's/^/IP-CIDR,/' > "./ips/${file}ip.list"
-            grep '::' "./output/text/${file}.txt" | sed 's/^/IP-CIDR6,/' >> "./ips/${file}ip.list"
-            curl -sSL "$(eval echo "\${${file}}")" | grep -v '#' | grep 'IP-ASN,' | sed 's/,no-resolve$//' >> "./ips/${file}ip.list"
-            curl -sSL "$(eval echo "\${${file}1}")" | grep -v '#' | grep 'IP-ASN,' | sed 's/,no-resolve$//' >> "./ips/${file}ip.list"
+            grep -v '::' "./output/text/${file}.txt" | sed '/^\s*$/d' | sed 's/^/IP-CIDR,/' > "./tmp/${file}.list"
+            grep '::' "./output/text/${file}.txt" | sed 's/^/IP-CIDR6,/' >> "./tmp/${file}.list"
+            curl -sSL "$(eval echo "\${${file}}")" | grep -v '#' | grep 'IP-ASN,' | sed 's/,no-resolve$//' >> "./tmp/${file}.list"
+            curl -sSL "$(eval echo "\${${file}1}")" | grep -v '#' | grep 'IP-ASN,' | sed 's/,no-resolve$//' >> "./tmp/${file}.list"
+            grep "${file}" ./asn.csv | sed -e "s/^\${file},//" -e 's/AS//g' | awk -F'|' '{for(i=1; i<=NF; i++) print "IP-ASN," $i}' >> "./tmp/${file}.list"
+            sort --ignore-case -u "./tmp/${file}.list" > "./ips/${file}ip.list"
           done
-          rm -rf ./output*
+          rm -rf ./tmp* ./output*
 
       - name: Release and upload `ips` assets
         uses: svenstaro/upload-release-action@v2
