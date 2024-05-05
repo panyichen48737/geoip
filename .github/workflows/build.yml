@@ -33,15 +33,17 @@ jobs:
           chmod +x asn.sh
           ./asn.sh
 
-      - name: Get GeoLite2
+      - name: Get GeoLite2-Country and GeoLite2-ASN
         env:
           LICENSE_KEY: ${{ secrets.MAXMIND_GEOLITE2_LICENSE }}
         run: |
           mkdir -p ./tmp/ ./geolite2/ ./output/maxmind/
+          # Get GeoLite2-Country
           curl -o ./tmp/GeoLite2-Country-CSV.zip -L "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country-CSV&license_key=${LICENSE_KEY}&suffix=zip"
           unzip -o ./tmp/GeoLite2-Country-CSV.zip -d ./tmp/
           cp -f ./tmp/GeoLite2*/*.csv ./geolite2/
           sed -i -n '/,country_iso_code,\|,CN,/p' ./geolite2/GeoLite2-Country-Locations-en.csv
+          # Get GeoLite2-ASN
           curl -o ./tmp/GeoLite2-ASN.tar.gz -L "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-ASN&license_key=${LICENSE_KEY}&suffix=tar.gz"
           tar -zxf ./tmp/GeoLite2-ASN.tar.gz -C ./tmp/
           cp -f ./tmp/GeoLite*/*.mmdb ./output/maxmind/ASN.mmdb
@@ -51,37 +53,38 @@ jobs:
         run: |
           echo "update_version=$(date -d '+8 hours' +%Y-%m-%d)" >> ${GITHUB_ENV}
           echo "netflix=https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Netflix/Netflix.list" >> $GITHUB_ENV
-          echo "telegram1=https://core.telegram.org/resources/cidr.txt" >> $GITHUB_ENV
-          echo "telegram2=https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Telegram/Telegram.list" >> $GITHUB_ENV
+          echo "telegram1=https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Telegram/Telegram.list" >> $GITHUB_ENV
+          echo "telegram2=https://core.telegram.org/resources/cidr.txt" >> $GITHUB_ENV
           echo "private1=https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Lan/Lan.list" >> $GITHUB_ENV
           echo "private2=https://raw.githubusercontent.com/XIU2/TrackersListCollection/master/all.txt" >> $GITHUB_ENV
-          echo "cn1=https://raw.githubusercontent.com/17mon/china_ip_list/master/china_ip_list.txt" >> $GITHUB_ENV
-          echo "cn2=https://raw.githubusercontent.com/gaoyifan/china-operator-ip/ip-lists/china.txt" >> $GITHUB_ENV
-          echo "cn3=https://raw.githubusercontent.com/gaoyifan/china-operator-ip/ip-lists/china6.txt" >> $GITHUB_ENV
-          echo "cn4=https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/ChinaIPs/ChinaIPs.list" >> $GITHUB_ENV
+          echo "cn1=https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/ChinaIPs/ChinaIPs.list" >> $GITHUB_ENV
+          echo "cn2=https://raw.githubusercontent.com/17mon/china_ip_list/master/china_ip_list.txt" >> $GITHUB_ENV
+          echo "cn3=https://raw.githubusercontent.com/gaoyifan/china-operator-ip/ip-lists/china.txt" >> $GITHUB_ENV
+          echo "cn4=https://raw.githubusercontent.com/gaoyifan/china-operator-ip/ip-lists/china6.txt" >> $GITHUB_ENV
+          
         shell: bash
 
       - name: Generate netflix
         run: |
-          curl -sSL ${netflix} | grep -v '#' | grep 'IP-CIDR' | awk -F',' '{print $2}' >> ./data/netflix
+          curl -sSL ${netflix} | grep -v '#' | grep 'IP-' | awk -F',' '{print $2}' >> ./data/netflix
 
       - name: Generate telegram
         run: |
-          curl -sSL ${telegram1} >> ./data/telegram
-          curl -sSL ${telegram2} | grep -v '#' | grep 'IP-CIDR' | awk -F',' '{print $2}' >> ./data/telegram
+          curl -sSL ${telegram1} | grep -v '#' | grep 'IP-' | awk -F',' '{print $2}' >> ./data/telegram
+          curl -sSL ${telegram2} >> ./data/telegram
 
       - name: Generate private
         run: |
-          curl -sSL ${private1} | grep -v '#' | grep 'IP-CIDR' | awk -F',' '{print $2}' > ./data/private
+          curl -sSL ${private1} | grep -v '#' | grep 'IP-' | awk -F',' '{print $2}' > ./data/private
           curl -sSL ${private2} | grep -E '\/[^A-Za-z]+\/' | awk -F'[/:]' '{print $4}' >> ./data/private
           curl -sSL ${private2} | grep '::' | awk -F'[][]' '{print $2}' >> ./data/private
 
       - name: Generate cn
         run: |
-          curl -sSL ${cn1} >> ./data/cn
+          curl -sSL ${cn1} | grep -v '#' | grep 'IP-' | awk -F',' '{print $2}' >> ./data/cn
           curl -sSL ${cn2} >> ./data/cn
           curl -sSL ${cn3} >> ./data/cn
-          curl -sSL ${cn4} | grep -v '#' | grep 'IP-CIDR' | awk -F',' '{print $2}' >> ./data/cn
+          curl -sSL ${cn4} >> ./data/cn
 
       - name: Build geoip files
         run: |
@@ -129,6 +132,8 @@ jobs:
           for file in $(ls ./output/text/ | sed 's/\..*//'); do
             grep -v '::' "./output/text/${file}.txt" | sed '/^\s*$/d' | sed 's/^/IP-CIDR,/' > "./ips/${file}ip.list"
             grep '::' "./output/text/${file}.txt" | sed 's/^/IP-CIDR6,/' >> "./ips/${file}ip.list"
+            curl -sSL "${file}" | grep -v '#' | grep 'IP-ASN,' | sed 's/,no-resolve$//' >> "./ips/${file}ip.list"
+            curl -sSL "${file}1" | grep -v '#' | grep 'IP-ASN,' | sed 's/,no-resolve$//' >> "./ips/${file}ip.list"
           done
           rm -rf ./output*
 
