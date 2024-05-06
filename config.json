@@ -31,36 +31,19 @@
       }
     },
     {
-      "type": "v2rayGeoIPDat",
-      "action": "output",
-      "args": {
-        "outputName": "geoip-lite.dat",
-        "wantedList": ["telegram", "private", "cn"]
-      }
-    },
-    
-    {
-      "type": "v2rayGeoIPDat",
-      "action": "output",
-      "args": {
-        "outputName": "geoip-asn.dat",
-        "wantedList": ["netflix", "telegram"]
-      }
-    },
-    {
-      "type": "v2rayGeoIPDat",
-      "action": "output",
-      "args": {
-        "oneFilePerList": true,
-        "wantedList": ["private", "cn"]
-      }
-    },
-    {
       "type": "maxmindMMDB",
       "action": "output",
       "args": {
         "outputName": "Country.mmdb",
         "wantedList": ["netflix", "telegram", "private", "cn"]
+      }
+    },
+    {
+      "type": "v2rayGeoIPDat",
+      "action": "output",
+      "args": {
+        "outputName": "geoip-lite.dat",
+        "wantedList": ["telegram", "private", "cn"]
       }
     },
     {
@@ -72,10 +55,18 @@
       }
     },
     {
+      "type": "v2rayGeoIPDat",
+      "action": "output",
+      "args": {
+        "outputName": "geoip-asn.dat",
+        "wantedList": ["netflix", "telegram"]
+      }
+    },
+    {
       "type": "maxmindMMDB",
       "action": "output",
       "args": {
-        "outputName": "ASN.mmdb",
+        "outputName": "Country-ASN.mmdb",
         "wantedList": ["netflix", "telegram"]
       }
     },
