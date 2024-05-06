@@ -95,7 +95,9 @@ jobs:
       - name: Get geoip-all.dat and Country-all.mmdb relative files
         run: |
           curl -o ./output/dat/geoip-all.dat -L https://raw.githubusercontent.com/Loyalsoldier/geoip/release/geoip.dat
+          curl -o ./output/dat/geoip-asn-all.dat -L https://raw.githubusercontent.com/Loyalsoldier/geoip/release/geoip-asn.dat
           curl -o ./output/maxmind/Country-all.mmdb -L https://raw.githubusercontent.com/Loyalsoldier/geoip/release/Country.mmdb
+          curl -o ./output/maxmind/Country-ASN-all.mmdb -L https://raw.githubusercontent.com/Loyalsoldier/geoip/release/Country-asn.mmdb
 
       - name: Build db and metadb file
         env:
@@ -103,7 +105,7 @@ jobs:
         run: |
           cd ./output/dat/ || exit 1
           go install -trimpath -ldflags="-s -w -buildid=" github.com/metacubex/geo/cmd/geo@master
-          for file in $(ls *.dat | sed 's/\..*//g'); do
+          for file in $(ls *.dat | sed 's/\..*//g' | grep -v 'asn'); do
             geo convert ip -i v2ray -o meta -f "./${file}.metadb" "./${file}.dat"
             geo convert ip -i v2ray -o sing -f "./${file}.db" "./${file}.dat"
           done
