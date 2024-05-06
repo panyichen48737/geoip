@@ -46,7 +46,7 @@
   </tr>
   <tr>
     <td>geoip-asn-all.dat</td>
-    <td rowspan="2"><code>cloudflare</code></del>、<code>cloudfront</code>、<code>facebook</code>、<code>fastly</code>、<code>google</code>、<code>netflix</code>、<code>telegram</code> 和 <code>twitter</code></td>
+    <td rowspan="2"><code>cloudflare</code></del>、<code>cloudfront</code>、<code>facebook</code>、<code>fastly</code>、<code>google</code>、<code>netflix</code>、<code>telegram</code> 和 <code>twitter</code>，具体可<a href="https://github.com/Loyalsoldier/geoip/blob/master/asn.csv">点此查看</a></td>
     <td><a href="https://raw.githubusercontent.com/DustinWin/geoip/clash/geoip-asn-all.dat">点此下载</a></td>
     <td><a href="https://cdn.jsdelivr.net/gh/DustinWin/geoip@clash/geoip-asn-all.dat">点此下载</a></td>
     <td><a href="https://mirror.ghproxy.com/https://raw.githubusercontent.com/DustinWin/geoip/clash/geoip-asn-all.dat">点此下载</a></td>
