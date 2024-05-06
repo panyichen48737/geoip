@@ -52,7 +52,8 @@ jobs:
         run: |
           echo "update_version=$(date -d '+8 hours' +%Y-%m-%d)" >> ${GITHUB_ENV}
           echo "netflix=https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Netflix/Netflix.list" >> $GITHUB_ENV
-          echo "telegram=https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Telegram/Telegram.list" >> $GITHUB_ENV
+          echo "telegram1=https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Telegram/Telegram.list" >> $GITHUB_ENV
+          echo "telegram2=https://core.telegram.org/resources/cidr.txt" >> $GITHUB_ENV
           echo "private1=https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Lan/Lan.list" >> $GITHUB_ENV
           echo "private2=https://raw.githubusercontent.com/XIU2/TrackersListCollection/master/all.txt" >> $GITHUB_ENV
           echo "cn1=https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/ChinaIPs/ChinaIPs.list" >> $GITHUB_ENV
@@ -68,7 +69,8 @@ jobs:
 
       - name: Generate telegram
         run: |
-          curl -sSL ${telegram} | grep -v '#' | grep 'IP-CIDR' | awk -F',' '{print $2}' >> ./data/telegram
+          curl -sSL ${telegram1} | grep -v '#' | grep 'IP-CIDR' | awk -F',' '{print $2}' >> ./data/telegram
+          curl -sSL ${telegram2} >> ./data/telegram
 
       - name: Generate private
         run: |
