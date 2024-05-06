@@ -37,10 +37,10 @@ jobs:
         env:
           LICENSE_KEY: ${{ secrets.MAXMIND_GEOLITE2_LICENSE }}
         run: |
-          mkdir -p ./tmp/ ./geolite2/ ./output/maxmind/
-          curl -o ./tmp/GeoLite2-Country-CSV.zip -L "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country-CSV&license_key=${LICENSE_KEY}&suffix=zip"
-          unzip -o ./tmp/GeoLite2-Country-CSV.zip -d ./tmp/
-          cp -f ./tmp/GeoLite2*/*.csv ./geolite2/
+          curl -L "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country-CSV&license_key=${LICENSE_KEY}&suffix=zip" -o GeoLite2-Country-CSV.zip
+          unzip GeoLite2-Country-CSV.zip
+          rm -f GeoLite2-Country-CSV.zip
+          mv GeoLite2* geolite2
           sed -i -n '/,country_iso_code,\|,CN,/p' ./geolite2/GeoLite2-Country-Locations-en.csv
 
       - name: Set variables
@@ -121,7 +121,7 @@ jobs:
 
       - name: Move and generate files to branchs
         run: |
-          mkdir -p ./ips/
+          mkdir -p ./tmp/ ./ips/
           cp -f ./output/maxmind/*.mmdb ./clash/
           for file in $(ls ./output/text/ | sed 's/\..*//'); do
             grep -v '::' "./output/text/${file}.txt" | sed '/^\s*$/d' | sed 's/^/IP-CIDR,/' > "./tmp/${file}.list"
