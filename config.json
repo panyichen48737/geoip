@@ -1,6 +1,10 @@
 {
   "input": [
     {
+      "type": "private",
+      "action": "add"
+    },
+    {
       "type": "maxmindGeoLite2CountryCSV",
       "action": "add",
       "args": {
@@ -27,6 +31,31 @@
       }
     },
     {
+      "type": "v2rayGeoIPDat",
+      "action": "output",
+      "args": {
+        "outputName": "geoip-lite.dat",
+        "wantedList": ["telegram", "private", "cn"]
+      }
+    },
+    
+    {
+      "type": "v2rayGeoIPDat",
+      "action": "output",
+      "args": {
+        "outputName": "geoip-asn.dat",
+        "wantedList": ["netflix", "telegram"]
+      }
+    },
+    {
+      "type": "v2rayGeoIPDat",
+      "action": "output",
+      "args": {
+        "oneFilePerList": true,
+        "wantedList": ["private", "cn"]
+      }
+    },
+    {
       "type": "maxmindMMDB",
       "action": "output",
       "args": {
@@ -35,10 +64,10 @@
       }
     },
     {
-      "type": "v2rayGeoIPDat",
+      "type": "maxmindMMDB",
       "action": "output",
       "args": {
-        "outputName": "geoip-lite.dat",
+        "outputName": "Country-lite.mmdb",
         "wantedList": ["telegram", "private", "cn"]
       }
     },
@@ -46,8 +75,8 @@
       "type": "maxmindMMDB",
       "action": "output",
       "args": {
-        "outputName": "Country-lite.mmdb",
-        "wantedList": ["telegram", "private", "cn"]
+        "outputName": "ASN.mmdb",
+        "wantedList": ["netflix", "telegram"]
       }
     },
     {
