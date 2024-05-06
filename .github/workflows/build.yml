@@ -33,20 +33,15 @@ jobs:
           chmod +x asn.sh
           ./asn.sh
 
-      - name: Get GeoLite2-Country and GeoLite2-ASN
+      - name: Get GeoLite2
         env:
           LICENSE_KEY: ${{ secrets.MAXMIND_GEOLITE2_LICENSE }}
         run: |
           mkdir -p ./tmp/ ./geolite2/ ./output/maxmind/
-          # Get GeoLite2-Country
           curl -o ./tmp/GeoLite2-Country-CSV.zip -L "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country-CSV&license_key=${LICENSE_KEY}&suffix=zip"
           unzip -o ./tmp/GeoLite2-Country-CSV.zip -d ./tmp/
           cp -f ./tmp/GeoLite2*/*.csv ./geolite2/
           sed -i -n '/,country_iso_code,\|,CN,/p' ./geolite2/GeoLite2-Country-Locations-en.csv
-          # Get GeoLite2-ASN
-          curl -o ./tmp/GeoLite2-ASN.tar.gz -L "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-ASN&license_key=${LICENSE_KEY}&suffix=tar.gz"
-          tar -zxf ./tmp/GeoLite2-ASN.tar.gz -C ./tmp/
-          cp -f ./tmp/GeoLite*/*.mmdb ./output/maxmind/ASN.mmdb
 
       - name: Set variables
         run: |
