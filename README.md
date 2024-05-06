@@ -1,6 +1,6 @@
 # 一、 文件说明
 ## 1. 规则集文件类型
-① [Clash](https://github.com/Dreamacro/clash) geodata 规则集文件，包括：geoip.dat、Country.mmdb 和 geoip.metadb、ASN.mmdb（仅限 [mihomo 内核](https://github.com/MetaCubeX/mihomo)）等  
+① [Clash](https://github.com/Dreamacro/clash) geodata 规则集文件，包括：geoip.dat、Country.mmdb 和 geoip.metadb、geoip-asn.dat、ASN.mmdb（仅限 [mihomo 内核](https://github.com/MetaCubeX/mihomo)）等  
 ② Clash rule-set 规则集文件（.list 格式），适用于 `behavior: classical` 且 `format: text` 的使用场景，包含 `IP-ASN`、`IP-CIDR` 和 `IP-CIDR6` 规则类型  
 ③ [sing-box](https://github.com/SagerNet/sing-box) geodata 规则集文件，包括：geoip.db 等
 ## 2. 数据源
@@ -43,6 +43,19 @@
     <td><a href="https://raw.githubusercontent.com/DustinWin/geoip/sing-box/geoip-all.db">点此下载</a></td>
     <td><a href="https://cdn.jsdelivr.net/gh/DustinWin/geoip@sing-box/geoip-all.db">点此下载</a></td>
     <td><a href="https://mirror.ghproxy.com/https://raw.githubusercontent.com/DustinWin/geoip/sing-box/geoip-all.db">点此下载</a></td>
+  </tr>
+  <tr>
+    <td>geoip-asn-all.dat</td>
+    <td rowspan="2"><code>cloudflare</code></del>、<code>cloudfront</code>、<code>facebook</code>、<code>fastly</code>、<code>google</code>、<code>netflix</code>、<code>telegram</code> 和 <code>twitter</code></td>
+    <td><a href="https://raw.githubusercontent.com/DustinWin/geoip/clash/geoip-asn-all.dat">点此下载</a></td>
+    <td><a href="https://cdn.jsdelivr.net/gh/DustinWin/geoip@clash/geoip-asn-all.dat">点此下载</a></td>
+    <td><a href="https://mirror.ghproxy.com/https://raw.githubusercontent.com/DustinWin/geoip/clash/geoip-asn-all.dat">点此下载</a></td>
+  </tr>
+  <tr>
+    <td>Country-ASN-all.mmdb</td>
+    <td><a href="https://raw.githubusercontent.com/DustinWin/geoip/clash/Country-ASN-all.mmdb">点此下载</a></td>
+    <td><a href="https://cdn.jsdelivr.net/gh/DustinWin/geoip@clash/Country-ASN-all.mmdb">点此下载</a></td>
+    <td><a href="https://mirror.ghproxy.com/https://raw.githubusercontent.com/DustinWin/geoip/clash/Country-ASN-all.mmdb">点此下载</a></td>
   </tr>
   <tr>
     <td>geoip.dat</td>
@@ -94,6 +107,19 @@
     <td><a href="https://cdn.jsdelivr.net/gh/DustinWin/geoip@sing-box/geoip-lite.db">点此下载</a></td>
     <td><a href="https://mirror.ghproxy.com/https://raw.githubusercontent.com/DustinWin/geoip/sing-box/geoip-lite.db">点此下载</a></td>
   </tr>
+  <tr>
+    <td>geoip-asn.dat</td>
+    <td rowspan="2"><del><code>netflix</code></del>、<code>telegram</code>、<del><code>private</code> 和 <code>cn</code></del></td>
+    <td><a href="https://raw.githubusercontent.com/DustinWin/geoip/clash/geoip-asn.dat">点此下载</a></td>
+    <td><a href="https://cdn.jsdelivr.net/gh/DustinWin/geoip@clash/geoip-asn.dat">点此下载</a></td>
+    <td><a href="https://mirror.ghproxy.com/https://raw.githubusercontent.com/DustinWin/geoip/clash/geoip-asn.dat">点此下载</a></td>
+  </tr>
+  <tr>
+    <td>Country-ASN.mmdb</td>
+    <td><a href="https://raw.githubusercontent.com/DustinWin/geoip/clash/Country-ASN.mmdb">点此下载</a></td>
+    <td><a href="https://cdn.jsdelivr.net/gh/DustinWin/geoip@clash/Country-ASN.mmdb">点此下载</a></td>
+    <td><a href="https://mirror.ghproxy.com/https://raw.githubusercontent.com/DustinWin/geoip/clash/Country-ASN.mmdb">点此下载</a></td>
+  </tr>
 </table>
 
 # 三、 文件导入
@@ -105,7 +131,8 @@ curl -o $CRASHDIR/GeoIP.dat -L https://cdn.jsdelivr.net/gh/DustinWin/geoip@clash
 curl -o $CRASHDIR/Country.mmdb -L https://cdn.jsdelivr.net/gh/DustinWin/geoip@clash/Country.mmdb
 # mihomo 内核
 curl -o $CRASHDIR/geoip.metadb -L https://cdn.jsdelivr.net/gh/DustinWin/geoip@clash/geoip.metadb
-curl -o $CRASHDIR/ASN.mmdb -L https://cdn.jsdelivr.net/gh/DustinWin/geoip@clash/ASN.mmdb
+curl -o $CRASHDIR/geoip.dat -L https://cdn.jsdelivr.net/gh/DustinWin/geoip@clash/geoip-asn.dat
+curl -o $CRASHDIR/ASN.mmdb -L https://cdn.jsdelivr.net/gh/DustinWin/geoip@clash/Country-ASN.mmdb
 # sing-box 内核
 curl -o $CRASHDIR/geoip.db -L https://cdn.jsdelivr.net/gh/DustinWin/geoip@sing-box/geoip.db
 $CRASHDIR/start.sh restart
@@ -119,6 +146,7 @@ taskkill /f /t /im clash-meta*
 curl -o %APPDATA%\io.github.clash-verge-rev.clash-verge-rev\geoip.dat -L https://cdn.jsdelivr.net/gh/DustinWin/geoip@clash/geoip.dat
 curl -o %APPDATA%\io.github.clash-verge-rev.clash-verge-rev\Country.mmdb -L https://cdn.jsdelivr.net/gh/DustinWin/geoip@clash/Country.mmdb
 curl -o %APPDATA%\io.github.clash-verge-rev.clash-verge-rev\geoip.metadb -L https://cdn.jsdelivr.net/gh/DustinWin/geoip@clash/geoip.metadb
-curl -o %APPDATA%\io.github.clash-verge-rev.clash-verge-rev\ASN.mmdb -L https://cdn.jsdelivr.net/gh/DustinWin/geoip@clash/ASN.mmdb
+curl -o %APPDATA%\io.github.clash-verge-rev.clash-verge-rev\geoip.dat -L https://cdn.jsdelivr.net/gh/DustinWin/geoip@clash/geoip-asn.dat
+curl -o %APPDATA%\io.github.clash-verge-rev.clash-verge-rev\ASN.mmdb -L https://cdn.jsdelivr.net/gh/DustinWin/geoip@clash/Country-ASN.mmdb
 pause
 ```
