@@ -109,7 +109,7 @@
   </tr>
   <tr>
     <td>geoip-asn.dat</td>
-    <td rowspan="2"><del><code>netflix</code></del>、<code>telegram</code>、<del><code>private</code> 和 <code>cn</code></del></td>
+    <td rowspan="2"><code>netflix</code>、<code>telegram</code>、<del><code>private</code> 和 <code>cn</code></del></td>
     <td><a href="https://raw.githubusercontent.com/DustinWin/geoip/clash/geoip-asn.dat">点此下载</a></td>
     <td><a href="https://cdn.jsdelivr.net/gh/DustinWin/geoip@clash/geoip-asn.dat">点此下载</a></td>
     <td><a href="https://mirror.ghproxy.com/https://raw.githubusercontent.com/DustinWin/geoip/clash/geoip-asn.dat">点此下载</a></td>
