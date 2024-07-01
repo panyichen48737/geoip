@@ -79,15 +79,15 @@ jobs:
 
       - name: Generate cn
         run: |
-          curl -sSL ${cn1} | grep -v '#' | grep 'IP-CIDR' | awk -F',' '{print $2}' >> ./data/cn
-          curl -sSL ${cn2} >> ./data/cn
-          curl -sSL ${cn3} >> ./data/cn
-          curl -sSL ${cn4} >> ./data/cn
-          curl -sSL ${cn5} >> ./data/cn
-          curl -sSL ${cn6} >> ./data/cn
-          curl -sSL ${cn7} >> ./data/cn
-          curl -sSL ${cn8} | awk -F '|' '/CN/&&/ipv4/ {print $4 "/" 32-log($5)/log(2)}' >> ./data/cn
-          curl -sSL ${cn8} | awk -F '|' '/CN/&&/ipv6/ {print $4 "/" $5}' >> ./data/cn
+          curl -sSL ${cn1} | grep -v '#' | grep 'IP-CIDR' | awk -F',' '{print $2}' | sed 'G' >> ./data/cn
+          curl -sSL ${cn2} | sed 'G' >> ./data/cn
+          curl -sSL ${cn3} | sed 'G' >> ./data/cn
+          curl -sSL ${cn4} | sed 'G' >> ./data/cn
+          curl -sSL ${cn5} | sed 'G' >> ./data/cn
+          curl -sSL ${cn6} | sed 'G' >> ./data/cn
+          curl -sSL ${cn7} | sed 'G' >> ./data/cn
+          curl -sSL ${cn8} | awk -F '|' '/CN/&&/ipv4/ {print $4 "/" 32-log($5)/log(2)}' | sed 'G' >> ./data/cn
+          curl -sSL ${cn8} | awk -F '|' '/CN/&&/ipv6/ {print $4 "/" $5}' | sed 'G' >> ./data/cn
 
       - name: Build geoip files
         run: |
