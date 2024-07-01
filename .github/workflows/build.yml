@@ -83,9 +83,9 @@ jobs:
           curl -sSL ${cn2} >> ./data/cn
           curl -sSL ${cn3} >> ./data/cn
           curl -sSL ${cn4} >> ./data/cn
-          curl -sSL ${cn5} | sed G >> ./data/cn
-          curl -sSL ${cn6} | sed G >> ./data/cn
-          curl -sSL ${cn7} | sed G >> ./data/cn
+          curl -sSL ${cn5} >> ./data/cn
+          curl -sSL ${cn6} >> ./data/cn
+          curl -sSL ${cn7} >> ./data/cn
           curl -sSL ${cn8} | awk -F '|' '/CN/&&/ipv4/ {print $4 "/" 32-log($5)/log(2)}' >> ./data/cn
           curl -sSL ${cn8} | awk -F '|' '/CN/&&/ipv6/ {print $4 "/" $5}' >> ./data/cn
 
