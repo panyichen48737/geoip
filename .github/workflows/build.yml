@@ -127,6 +127,17 @@ jobs:
           grep 'IP-CIDR6,' ./ips/cnip.list | sed 's/^IP-CIDR6,//' > ./ips/cn_ipv6.txt
           rm -rf ./tmp* ./output*
 
+      - name: Release and upload `ips` assets
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          release_name: ips
+          tag: ips
+          overwrite: true
+          body: "IP 段列表文件"
+          file_glob: true
+          file: ./ips/*
+
       - name: Commit and push `ips` branch
         run: |
           cd ./ips/ || exit 1
