@@ -10,14 +10,6 @@
       }
     },
     {
-      "type": "cutter",
-      "action": "remove",
-      "args": {
-        "wantedList": ["cn"],
-        "onlyIPType": "ipv4"
-      }
-    },
-    {
       "type": "text",
       "action": "add",
       "args": {
@@ -48,22 +40,6 @@
       "type": "text",
       "action": "add",
       "args": {
-        "name": "cloudflare",
-        "uri": "https://www.cloudflare.com/ips-v4"
-      }
-    },
-    {
-      "type": "text",
-      "action": "add",
-      "args": {
-        "name": "cloudflare",
-        "uri": "https://www.cloudflare.com/ips-v6"
-      }
-    },
-    {
-      "type": "text",
-      "action": "add",
-      "args": {
         "name": "telegram",
         "uri": "https://core.telegram.org/resources/cidr.txt"
       }
@@ -85,40 +61,8 @@
       "type": "v2rayGeoIPDat",
       "action": "output",
       "args": {
-        "outputName": "geoip.dat"
-      }
-    },
-    {
-      "type": "v2rayGeoIPDat",
-      "action": "output",
-      "args": {
-        "outputName": "geoip-only-cn-private.dat",
-        "wantedList": ["cn", "private"]
-      }
-    },
-    {
-      "type": "v2rayGeoIPDat",
-      "action": "output",
-      "args": {
-        "outputName": "geoip-asn.dat",
-        "wantedList": [
-          "cloudflare",
-          "cloudfront",
-          "facebook",
-          "fastly",
-          "google",
-          "netflix",
-          "telegram",
-          "twitter"
-        ]
-      }
-    },
-    {
-      "type": "v2rayGeoIPDat",
-      "action": "output",
-      "args": {
-        "oneFilePerList": true,
-        "wantedList": ["cn", "private"]
+        "outputName": "geoip.dat",
+        "wantedList": ["netflix", "telegram", "private", "cn"]
       }
     },
     {
@@ -126,48 +70,32 @@
       "action": "output",
       "args": {
         "outputName": "Country.mmdb",
-        "overwriteList": [
-          "cn",
-          "private",
-          "cloudflare",
-          "cloudfront",
-          "facebook",
-          "fastly",
-          "google",
-          "netflix",
-          "telegram",
-          "twitter"
-        ]
+        "overwriteList": ["netflix", "telegram", "private", "cn"]
+      }
+    },
+    {
+      "type": "v2rayGeoIPDat",
+      "action": "output",
+      "args": {
+        "outputName": "geoip-lite.dat",
+        "wantedList": ["telegram", "private", "cn"]
       }
     },
     {
       "type": "maxmindMMDB",
       "action": "output",
       "args": {
-        "outputName": "Country-only-cn-private.mmdb",
-        "wantedList": ["cn", "private"]
+        "outputName": "Country-lite.mmdb",
+        "overwriteList": ["telegram", "private", "cn"]
       }
     },
     {
       "type": "maxmindMMDB",
       "action": "output",
       "args": {
-        "outputName": "Country-asn.mmdb",
-        "wantedList": [
-          "cloudflare",
-          "cloudfront",
-          "facebook",
-          "fastly",
-          "google",
-          "netflix",
-          "telegram",
-          "twitter"
-        ]
+        "outputName": "Country-ASN.mmdb",
+        "wantedList": ["netflix", "telegram"]
       }
-    },
-    {
-      "type": "singboxSRS",
-      "action": "output"
     },
     {
       "type": "text",
