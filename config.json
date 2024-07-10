@@ -70,7 +70,7 @@
       "action": "output",
       "args": {
         "outputName": "Country.mmdb",
-        "overwriteList": ["netflix", "telegram", "private", "cn"]
+        "wantedList": ["netflix", "telegram", "private", "cn"]
       }
     },
     {
@@ -86,7 +86,7 @@
       "action": "output",
       "args": {
         "outputName": "Country-lite.mmdb",
-        "overwriteList": ["telegram", "private", "cn"]
+        "wantedList": ["telegram", "private", "cn"]
       }
     },
     {
