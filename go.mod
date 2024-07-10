@@ -1,10 +1,9 @@
-module github.com/Loyalsoldier/geoip
+module geoip
 
-go 1.21
-
-toolchain go1.21.10
+go 1.22.5
 
 require (
+	github.com/Loyalsoldier/geoip v0.0.0-20240708091326-130d27a53141
 	github.com/maxmind/mmdbwriter v1.0.0
 	github.com/oschwald/maxminddb-golang v1.13.1
 	github.com/sagernet/sing-box v1.9.3
@@ -19,7 +18,6 @@ require (
 	github.com/adrg/xdg v0.5.0 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/kr/text v0.2.0 // indirect
 	github.com/miekg/dns v1.1.61 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/pires/go-proxyproto v0.7.0 // indirect
