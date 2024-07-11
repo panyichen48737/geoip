@@ -65,6 +65,8 @@ jobs:
       - name: Generate cn
         run: |
           curl -sSL ${cn1} | grep -v '#' | grep 'IP-CIDR' | awk -F',' '{print $2}' | sed 'G' >> ./data/cn
+          curl -sSL ${cn8} | grep -v '#' | grep 'IP-CIDR' | awk -F',' '{print $2}' | sed 'G' >> ./data/cn
+          curl -sSL ${cn9} | grep -v '#' | grep 'IP-CIDR' | awk -F',' '{print $2}' | sed 'G' >> ./data/cn
           curl -sSL ${cn8} | awk -F '|' '/CN/&&/ipv4/ {print $4 "/" 32-log($5)/log(2)}' | sed 'G' >> ./data/cn
           curl -sSL ${cn8} | awk -F '|' '/CN/&&/ipv6/ {print $4 "/" $5}' | sed 'G' >> ./data/cn
 
