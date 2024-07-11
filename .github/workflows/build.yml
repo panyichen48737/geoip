@@ -62,7 +62,6 @@ jobs:
       - name: Generate telegram
         run: |
           curl -sSL ${telegram1} | grep -v '#' | grep 'IP-' | awk -F',' '{print $2}' >> ./data/telegram
-          curl -sSL ${telegram2} >> ./data/telegram
 
       - name: Generate private
         run: |
