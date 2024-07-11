@@ -79,12 +79,12 @@ jobs:
           curl -sSL ${cn5} | sed 'G' >> ./data/cn
           curl -sSL ${cn6} | sed 'G' >> ./data/cn
           curl -sSL ${cn7} | sed 'G' >> ./data/cn
+          curl -sSL ${cn9} | grep -v '#' | grep 'IP-CIDR' | awk -F',' '{print $2}' | sed 'G' >> ./data/cn
+          curl -sSL ${cn10} | grep -v '#' | grep 'IP-CIDR' | awk -F',' '{print $2}' | sed 'G' >> ./data/cn
+          curl -sSL ${cn11} | grep -v '#' | grep 'IP-CIDR' | awk -F',' '{print $2}' | sed 'G' >> ./data/cn
+          curl -sSL ${cn12} | grep -v '#' | grep 'IP-CIDR' | awk -F',' '{print $2}' | sed 'G' >> ./data/cn
           curl -sSL ${cn8} | awk -F '|' '/CN/&&/ipv4/ {print $4 "/" 32-log($5)/log(2)}' | sed 'G' >> ./data/cn
           curl -sSL ${cn8} | awk -F '|' '/CN/&&/ipv6/ {print $4 "/" $5}' | sed 'G' >> ./data/cn
-          curl -sSL ${cn9} | grep 'IP-CIDR' | sed 'G' >> ./data/cn
-          curl -sSL ${cn10} | sed 'G' >> ./data/cn
-          curl -sSL ${cn11} | sed 'G' >> ./data/cn
-          curl -sSL ${cn12} | sed 'G' >> ./data/cn
 
       - name: Get GeoLite2
         env:
