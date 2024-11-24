@@ -40,6 +40,7 @@ jobs:
 
       - name: Generate netflix
         run: |
+          mkdir -p ./data/
           curl -sSL ${netflix} | grep -v '#' | grep 'IP-CIDR' | awk -F',' '{print $2}' >> ./data/netflix
 
       - name: Generate telegram
@@ -48,7 +49,6 @@ jobs:
 
       - name: Generate private
         run: |
-          mkdir -p ./data/
           curl -sSL ${private1} | grep -v '#' | grep 'IP-CIDR' | awk -F',' '{print $2}' >> ./data/private
           curl -sSL ${private2} | grep -E '\/[^A-Za-z]+\/' | awk -F'[/:]' '{print $4}' >> ./data/private
           curl -sSL ${private2} | grep '::' | awk -F'[][]' '{print $2}' >> ./data/private
