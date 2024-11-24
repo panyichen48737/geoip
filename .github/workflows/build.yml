@@ -29,23 +29,37 @@ jobs:
       - name: Set variables
         run: |
           echo "update_version=$(date -d '+8 hours' +%Y-%m-%d)" >> ${GITHUB_ENV}
-          echo "private=https://raw.githubusercontent.com/XIU2/TrackersListCollection/master/all.txt" >> $GITHUB_ENV
-          echo "cn=http://ftp.apnic.net/stats/apnic/delegated-apnic-latest" >> $GITHUB_ENV
+          echo "netflix=https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Netflix/Netflix.list" >> $GITHUB_ENV
+          echo "telegram1=https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Telegram/Telegram.list" >> $GITHUB_ENV
+          echo "private1=https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Lan/Lan.list" >> $GITHUB_ENV
+          echo "private2=https://raw.githubusercontent.com/XIU2/TrackersListCollection/master/all.txt" >> $GITHUB_ENV
+          echo "cn1=http://ftp.apnic.net/stats/apnic/delegated-apnic-latest" >> $GITHUB_ENV
+          echo "cn2=https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/ChinaIPs/ChinaIPs.list" >> $GITHUB_ENV
           echo "cn_asn=https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/ChinaASN/ChinaASN.list" >> $GITHUB_ENV
         shell: bash
+
+      - name: Generate netflix
+        run: |
+          curl -sSL ${netflix} | grep -v '#' | grep 'IP-CIDR' | awk -F',' '{print $2}' >> ./data/netflix
+
+      - name: Generate telegram
+        run: |
+          curl -sSL ${telegram1} | grep -v '#' | grep 'IP-CIDR' | awk -F',' '{print $2}' >> ./data/telegram
 
       - name: Generate private
         run: |
           mkdir -p ./data/
-          curl -sSL ${private} | grep -E '\/[^A-Za-z]+\/' | awk -F'[/:]' '{print $4}' >> ./data/private
-          curl -sSL ${private} | grep '::' | awk -F'[][]' '{print $2}' >> ./data/private
+          curl -sSL ${private1} | grep -v '#' | grep 'IP-CIDR' | awk -F',' '{print $2}' >> ./data/private
+          curl -sSL ${private2} | grep -E '\/[^A-Za-z]+\/' | awk -F'[/:]' '{print $4}' >> ./data/private
+          curl -sSL ${private2} | grep '::' | awk -F'[][]' '{print $2}' >> ./data/private
 
       - name: Generate cn and cn_ip
         run: |
           mkdir -p ./ips/
-          curl -sSL ${cn} | awk -F '|' '/CN/&&/ipv4/ {print $4 "/" 32-log($5)/log(2)}' > ./ips/cn_ipv4.txt
+          curl -sSL ${cn2} | grep -v '#' | grep 'IP-CIDR' | awk -F',' '{print $2}' | sed 'G' >> ./data/cn
+          curl -sSL ${cn1} | awk -F '|' '/CN/&&/ipv4/ {print $4 "/" 32-log($5)/log(2)}' | sed 'G' > ./ips/cn_ipv4.txt
           cat ./ips/cn_ipv4.txt >> ./data/cn
-          curl -sSL ${cn} | awk -F '|' '/CN/&&/ipv6/ {print $4 "/" $5}' > ./ips/cn_ipv6.txt
+          curl -sSL ${cn1} | awk -F '|' '/CN/&&/ipv6/ {print $4 "/" $5}' | sed 'G' > ./ips/cn_ipv6.txt
           cat ./ips/cn_ipv6.txt >> ./data/cn
 
       - name: Get GeoLite2
