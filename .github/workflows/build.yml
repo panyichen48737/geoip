@@ -127,7 +127,8 @@ jobs:
             grep "\"${file}\":" ./config.json | awk -F'[][]' '{print $2}' | awk -F', ' '{for(i=1;i<=NF;i++){gsub(/"/, "", $i); gsub(/AS/, "", $i); print "IP-ASN,"$i}}' >> "./tmp/${file}.list"
             sort --ignore-case -u "./tmp/${file}.list" > "./ips/${file}ip.list"
           done
-          mv ./output/text/* ./ips/*
+          mv ./output/text/* ./ips
+          find ./output/text/ -type f
           rm -rf ./tmp* ./output*
 
       - name: Release and upload `ips` assets
