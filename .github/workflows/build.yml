@@ -61,8 +61,7 @@ jobs:
           cat ./ips/cn_ipv4.txt >> ./data/cn
           curl -sSL ${cn1} | awk -F '|' '/CN/&&/ipv6/ {print $4 "/" $5}' | sed 'G' > ./ips/cn_ipv6.txt
           cat ./ips/cn_ipv6.txt >> ./data/cn
-          sed -i '1i 10.31.0.1' ./data/cn
-
+          
       - name: Get GeoLite2
         env:
           LICENSE_KEY: ${{ secrets.MAXMIND_GEOLITE2_LICENSE }}
@@ -128,6 +127,7 @@ jobs:
             grep "\"${file}\":" ./config.json | awk -F'[][]' '{print $2}' | awk -F', ' '{for(i=1;i<=NF;i++){gsub(/"/, "", $i); gsub(/AS/, "", $i); print "IP-ASN,"$i}}' >> "./tmp/${file}.list"
             sort --ignore-case -u "./tmp/${file}.list" > "./ips/${file}ip.list"
           done
+          mv ./output/text/* ./ips/*
           rm -rf ./tmp* ./output*
 
       - name: Release and upload `ips` assets
