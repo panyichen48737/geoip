@@ -42,17 +42,14 @@ jobs:
         run: |
           mkdir -p ./data/
           curl -sSL ${netflix} | grep -v '#' | grep 'IP-CIDR' | awk -F',' '{print $2}' >> ./data/netflix
-
       - name: Generate telegram
         run: |
           curl -sSL ${telegram1} | grep -v '#' | grep 'IP-CIDR' | awk -F',' '{print $2}' >> ./data/telegram
-
       - name: Generate private
         run: |
           curl -sSL ${private1} | grep -v '#' | grep 'IP-CIDR' | awk -F',' '{print $2}' >> ./data/private
           curl -sSL ${private2} | grep -E '\/[^A-Za-z]+\/' | awk -F'[/:]' '{print $4}' >> ./data/private
           curl -sSL ${private2} | grep '::' | awk -F'[][]' '{print $2}' >> ./data/private
-
       - name: Generate cn and cn_ip
         run: |
           mkdir -p ./ips/
@@ -61,7 +58,7 @@ jobs:
           cat ./ips/cn_ipv4.txt >> ./data/cn
           curl -sSL ${cn1} | awk -F '|' '/CN/&&/ipv6/ {print $4 "/" $5}' | sed 'G' > ./ips/cn_ipv6.txt
           cat ./ips/cn_ipv6.txt >> ./data/cn
-          
+          sed -i '1i 10.31.0.1' ./data/cn
       - name: Get GeoLite2
         env:
           LICENSE_KEY: ${{ secrets.MAXMIND_GEOLITE2_LICENSE }}
@@ -78,12 +75,10 @@ jobs:
           mv -f ./GeoLite2-ASN_*/*.mmdb ./output/
           mv -f ./GeoLite2-ASN-CSV_*/*.csv ./geolite2/
           mv -f ./GeoLite2-Country-CSV_*/*.csv ./geolite2/
-
       - name: Build geoip files
         run: |
           go build ./
           ./geoip convert -c ./config.json
-
       - name: Verify mmdb files
         run: |
           cd ./output/ || exit 1
@@ -91,13 +86,11 @@ jobs:
           for name in $(ls *.mmdb); do
             $(go env GOPATH)/bin/mmdbverify -file ${name}
           done
-
       - name: Get geoip-all.dat and Country-all.mmdb relative files
         run: |
           curl -o ./output/geoip-all.dat -L https://raw.githubusercontent.com/Loyalsoldier/geoip/release/geoip.dat
           curl -o ./output/Country-all.mmdb -L https://raw.githubusercontent.com/Loyalsoldier/geoip/release/Country.mmdb
           curl -o ./output/Country-ASN-all.mmdb -L https://raw.githubusercontent.com/Loyalsoldier/geoip/release/Country-asn.mmdb
-
       - name: Build db and metadb file
         run: |
           cd ./output/ || exit 1
@@ -106,7 +99,6 @@ jobs:
             geo convert ip -i v2ray -o meta -f "./${file}.metadb" "./${file}.dat"
             geo convert ip -i v2ray -o sing -f "./${file}.db" "./${file}.dat"
           done
-
       - name: Move files
         run: |
           mkdir -p ./clash/ ./sing-box/
@@ -117,7 +109,6 @@ jobs:
           for file in $(ls *.db); do
             install -Dp "./${file}" ../sing-box/
           done
-
       - name: Move and generate files to branchs
         run: |
           mkdir -p ./tmp/
@@ -127,10 +118,7 @@ jobs:
             grep "\"${file}\":" ./config.json | awk -F'[][]' '{print $2}' | awk -F', ' '{for(i=1;i<=NF;i++){gsub(/"/, "", $i); gsub(/AS/, "", $i); print "IP-ASN,"$i}}' >> "./tmp/${file}.list"
             sort --ignore-case -u "./tmp/${file}.list" > "./ips/${file}ip.list"
           done
-          mv ./output/text/* ./ips
-          find ./output/text/ -type f
           rm -rf ./tmp* ./output*
-
       - name: Release and upload `ips` assets
         uses: svenstaro/upload-release-action@v2
         with:
@@ -154,7 +142,6 @@ jobs:
           git add . && git commit -m "IP 段列表更新于 ${update_version}"
           git remote add origin "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
           git push -f -u origin ips
-
       - name: Release and upload `clash` assets
         uses: svenstaro/upload-release-action@v2
         with:
@@ -195,7 +182,6 @@ jobs:
           for file in $(ls); do
             curl -i "https://purge.jsdelivr.net/gh/${{ github.repository }}@sing-box/${file}"
           done
-
       - name: Delete old workflow runs
         uses: Mattraks/delete-workflow-runs@v2
         with:
