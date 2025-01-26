@@ -122,7 +122,6 @@ jobs:
         run: |
           mkdir -p ./tmp/
           mv -f ./output/Country*.mmdb ./clash/
-          curl -sSL ${cn_asn} | grep -v '#' | sed 's/,no-resolve$//' > ./tmp/cn.list
           for file in $(ls ./output/clash/classical/ | sed 's/\..*//'); do
             grep -v 'payload:' "./output/clash/classical/${file}.txt" | sed 's/^  - //' >> "./tmp/${file}.list"
             grep "\"${file}\":" ./config.json | awk -F'[][]' '{print $2}' | awk -F', ' '{for(i=1;i<=NF;i++){gsub(/"/, "", $i); gsub(/AS/, "", $i); print "IP-ASN,"$i}}' >> "./tmp/${file}.list"
