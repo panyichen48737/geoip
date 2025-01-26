@@ -61,7 +61,7 @@ jobs:
           cat ./ips/cn_ipv4.txt >> ./data/cn
           curl -sSL ${cn1} | awk -F '|' '/CN/&&/ipv6/ {print $4 "/" $5}' | sed 'G' > ./ips/cn_ipv6.txt
           cat ./ips/cn_ipv6.txt >> ./data/cn
-          sed -i '1i 我是' ./data/cn
+          sed -i '1i 10.31.0.1' ./data/cn
 
       - name: Get GeoLite2
         env:
