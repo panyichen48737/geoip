@@ -58,23 +58,7 @@ jobs:
           cat ./ips/cn_ipv4.txt >> ./data/cn
           curl -sSL ${cn1} | awk -F '|' '/CN/&&/ipv6/ {print $4 "/" $5}' | sed 'G' > ./ips/cn_ipv6.txt
           cat ./ips/cn_ipv6.txt >> ./data/cn
-          sed -i '1i 10.31.0.1' ./data/cn
-      - name: Get GeoLite2
-        env:
-          LICENSE_KEY: ${{ secrets.MAXMIND_GEOLITE2_LICENSE }}
-        run: |
-          mkdir -p ./output/ ./geolite2/
-          curl -L "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-ASN&license_key=${LICENSE_KEY}&suffix=tar.gz" | tar -zx -C ./
-          curl -L "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country&license_key=${LICENSE_KEY}&suffix=tar.gz" | tar -zx -C ./
-          curl -o ./GeoLite2-ASN-CSV.zip -L "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-ASN-CSV&license_key=${LICENSE_KEY}&suffix=zip"
-          curl -o ./GeoLite2-Country-CSV.zip -L "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country-CSV&license_key=${LICENSE_KEY}&suffix=zip"
-          unzip ./GeoLite2-ASN-CSV.zip
-          unzip ./GeoLite2-Country-CSV.zip
-          rm -f ./*.zip
-          mv -f ./GeoLite2-Country_*/*.mmdb ./output/
-          mv -f ./GeoLite2-ASN_*/*.mmdb ./output/
-          mv -f ./GeoLite2-ASN-CSV_*/*.csv ./geolite2/
-          mv -f ./GeoLite2-Country-CSV_*/*.csv ./geolite2/
+     
       - name: Build geoip files
         run: |
           go build ./
@@ -118,6 +102,8 @@ jobs:
             grep "\"${file}\":" ./config.json | awk -F'[][]' '{print $2}' | awk -F', ' '{for(i=1;i<=NF;i++){gsub(/"/, "", $i); gsub(/AS/, "", $i); print "IP-ASN,"$i}}' >> "./tmp/${file}.list"
             sort --ignore-case -u "./tmp/${file}.list" > "./ips/${file}ip.list"
           done
+          mv ./output/text/* ./ips
+          ls ./output/text/
           rm -rf ./tmp* ./output*
       - name: Release and upload `ips` assets
         uses: svenstaro/upload-release-action@v2
