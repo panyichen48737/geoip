@@ -58,7 +58,24 @@ jobs:
           cat ./ips/cn_ipv4.txt >> ./data/cn
           curl -sSL ${cn1} | awk -F '|' '/CN/&&/ipv6/ {print $4 "/" $5}' | sed 'G' > ./ips/cn_ipv6.txt
           cat ./ips/cn_ipv6.txt >> ./data/cn
-     
+
+      - name: Get GeoLite2
+        env:
+          LICENSE_KEY: ${{ secrets.MAXMIND_GEOLITE2_LICENSE }}
+        run: |
+          mkdir -p ./output/ ./geolite2/
+          curl -L -u ${LICENSE_KEY} "https://download.maxmind.com/geoip/databases/GeoLite2-ASN/download?suffix=tar.gz" | tar -zx -C ./
+          curl -L -u ${LICENSE_KEY} "https://download.maxmind.com/geoip/databases/GeoLite2-Country/download?suffix=tar.gz" | tar -zx -C ./
+          curl -L -u ${LICENSE_KEY} -o ./GeoLite2-ASN-CSV.zip -L "https://download.maxmind.com/geoip/databases/GeoLite2-ASN-CSV/download?suffix=zip"
+          curl -L -u ${LICENSE_KEY} -o ./GeoLite2-Country-CSV.zip -L "https://download.maxmind.com/geoip/databases/GeoLite2-Country-CSV/download?suffix=zip"
+          unzip ./GeoLite2-ASN-CSV.zip
+          unzip ./GeoLite2-Country-CSV.zip
+          rm -f ./*.zip
+          mv -f ./GeoLite2-Country_*/*.mmdb ./output/
+          mv -f ./GeoLite2-ASN_*/*.mmdb ./output/
+          mv -f ./GeoLite2-ASN-CSV_*/*.csv ./geolite2/
+          mv -f ./GeoLite2-Country-CSV_*/*.csv ./geolite2/
+          
       - name: Build geoip files
         run: |
           go build ./
