@@ -102,9 +102,11 @@ jobs:
             grep "\"${file}\":" ./config.json | awk -F'[][]' '{print $2}' | awk -F', ' '{for(i=1;i<=NF;i++){gsub(/"/, "", $i); gsub(/AS/, "", $i); print "IP-ASN,"$i}}' >> "./tmp/${file}.list"
             sort --ignore-case -u "./tmp/${file}.list" > "./ips/${file}ip.list"
           done
-          mv ./output/text/* ./ips
-          ls ./output/text/
           rm -rf ./tmp* ./output*
+          cp ./ips/cnip.list ./ips/cnip.txt
+          sed -i 's/IP-CIDR,//g; s/IP-CIDR6,//g' ./ips/cnip.txt
+          
+          
       - name: Release and upload `ips` assets
         uses: svenstaro/upload-release-action@v2
         with:
