@@ -1,6 +1,16 @@
 {
   "input": [
     {
+      "type": "maxmindGeoLite2CountryCSV",
+      "action": "add",
+      "args": {
+        "country": "./geolite2/GeoLite2-Country-Locations-en.csv",
+        "ipv4": "./geolite2/GeoLite2-Country-Blocks-IPv4.csv",
+        "ipv6": "./geolite2/GeoLite2-Country-Blocks-IPv6.csv",
+        "wantedList": ["cn"]
+      }
+    },
+    {
       "type": "text",
       "action": "add",
       "args": {
@@ -72,6 +82,18 @@
       }
     },
     {
+      "type": "maxmindGeoLite2ASNCSV",
+      "action": "add",
+      "args": {
+        "ipv4": "./geolite2/GeoLite2-ASN-Blocks-IPv4.csv",
+        "ipv6": "./geolite2/GeoLite2-ASN-Blocks-IPv6.csv",
+        "wantedList": {
+          "netflix": ["AS55095", "AS40027", "AS394406", "AS2906"],
+          "telegram": ["AS62041", "AS62014", "AS59930", "AS44907", "AS211157"]
+        }
+      }
+    },
+    {
       "type": "private",
       "action": "add"
     }
@@ -100,6 +122,35 @@
       "action": "output",
       "args": {
         "oneFilePerList": true
+      }
+    },
+    {
+      "type": "maxmindMMDB",
+      "action": "output",
+      "args": {
+        "outputDir": "./output",
+        "outputName": "Country-lite.mmdb",
+        "sourceMMDBURI": "./output/GeoLite2-Country.mmdb",
+        "wantedList": ["telegram", "private", "cn"]
+      }
+    },
+    {
+      "type": "maxmindMMDB",
+      "action": "output",
+      "args": {
+        "outputDir": "./output",
+        "outputName": "Country.mmdb",
+        "sourceMMDBURI": "./output/GeoLite2-Country.mmdb",
+        "wantedList": ["netflix", "telegram", "private", "cn"]
+      }
+    },
+    {
+      "type": "maxmindMMDB",
+      "action": "output",
+      "args": {
+        "outputDir": "./output",
+        "outputName": "Country-ASN.mmdb",
+        "wantedList": ["netflix", "telegram"]
       }
     },
     {
