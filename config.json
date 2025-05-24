@@ -206,6 +206,15 @@
       "action": "output"
     },
     {
+      "type": "text",
+      "action": "output",
+      "args": {
+        "outputExtension": ".txt",       // 输出文件的扩展名为 .conf
+        #"wantedList": ["cn", "us", "jp"], // 只输出名为 cn、us、jp 这三个类别的 IPv4 地址
+        #"onlyIPType": "ipv4",
+      }
+    },
+    {
       "type": "clashRuleSetClassical",
       "action": "output"
     }
