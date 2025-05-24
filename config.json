@@ -206,13 +206,6 @@
       "action": "output"
     },
     {
-      "type": "text",
-      "action": "output",
-      "args": {
-        "outputExtension": ".txt"
-      }
-    },
-    {
       "type": "clashRuleSetClassical",
       "action": "output"
     }
