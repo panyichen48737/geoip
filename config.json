@@ -10,7 +10,7 @@
         "wantedList": ["cn"]
       }
     },
-        {
+    {
       "type": "text",
       "action": "add",
       "args": {
