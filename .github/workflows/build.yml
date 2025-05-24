@@ -114,7 +114,7 @@ jobs:
           done
           
           rm -rf ./tmp* ./output*
-          cp ./ips/cnip.list ./ips/cnip.txt && sed -i '/IP-ASN/d' ./ips/cnip.txt && sed -i 's/IP-CIDR,//g; s/IP-CIDR6,//g' ./ips/cnip.txt
+          cp ./ips/cnip.list ./ips/cnip.txt && sed -i '/IP-ASN/d' ./ips/cnip.txt && sed -i 's/IP-CIDR,//g; s/IP-CIDR6,//g' ./ips/cnip.txt && sort -u ./ips/cnip.txt -o ./ips/cnip.txt && grep -Eo '([0-9]{1,3}\.){3}[0-9]{1,3}(/\d{1,2})?' ./ips/cnip.txt | sort -u > ./ips/cnip_ipv4.txt && grep -Eo '([a-fA-F0-9:]+:+)+[a-fA-F0-9]+(/\d{1,3})?' ./ips/cnip.txt | sort -u > ./ips/cnip_ipv6.txt
           
       - name: Release and upload `ips` assets
         uses: svenstaro/upload-release-action@v2
