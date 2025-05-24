@@ -207,9 +207,9 @@
     },
     {
       "type": "text",
-      "action": "output"
+      "action": "output",
       "args": {
-        "outputExtension": ".txt",
+        "outputExtension": ".txt"
       }
     },
     {
