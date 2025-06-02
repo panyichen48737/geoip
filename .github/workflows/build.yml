@@ -114,7 +114,7 @@ jobs:
           done
           
           rm -rf ./tmp* ./output*
-          cp ./ips/cnip.list ./ips/cnip.txt && sed -i '/IP-ASN/d' ./ips/cnip.txt && sed -i 's/IP-CIDR,//g; s/IP-CIDR6,//g' ./ips/cnip.txt && sort -u ./ips/cnip.txt -o ./ips/cnip.txt && grep -Po '\b(?:\d{1,3}\.){3}\d{1,3}/\d{1,2}\b' ./ips/cnip.txt | sort -u > ./ips/cnip_ipv4.txt && grep -Po '\b(?:[a-fA-F0-9]{0,4}:){2,7}[a-fA-F0-9]{0,4}/\d{1,3}\b' ./ips/cnip.txt | sort -u > ./ips/cnip_ipv6.txt
+          cp ./output/text/cnip.txt ./ips/cnip.txt && sed -i '/IP-ASN/d' ./ips/cnip.txt && sed -i 's/IP-CIDR,//g; s/IP-CIDR6,//g' ./ips/cnip.txt && sort -u ./ips/cnip.txt -o ./ips/cnip.txt && grep -Po '\b(?:\d{1,3}\.){3}\d{1,3}/\d{1,2}\b' ./ips/cnip.txt | sort -u > ./ips/cnip_ipv4.txt && grep -Po '\b(?:[a-fA-F0-9]{0,4}:){2,7}[a-fA-F0-9]{0,4}/\d{1,3}\b' ./ips/cnip.txt | sort -u > ./ips/cnip_ipv6.txt
           
       - name: Release and upload `ips` assets
         uses: svenstaro/upload-release-action@v2
