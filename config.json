@@ -204,6 +204,9 @@
     {
       "type": "text",
       "action": "output"
+      "args": {
+        "outputExtension": ".txt"    // 输出文件的扩展名为 .conf
+      }
     },
     {
       "type": "clashRuleSetClassical",
