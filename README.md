@@ -116,7 +116,7 @@
 # 三、 文件导入
 ## 1. 导入 Linux 端（以 ShellCrash 导入 geoip.dat、Country.mmdb、geoip.metadb、ASN.mmdb 和 geoip.db 为例）
 连接 SSH 后执行如下命令：
-```
+```shell
 # mihomo 内核
 curl -o $CRASHDIR/GeoIP.dat -L https://cdn.jsdelivr.net/gh/DustinWin/geoip@mihomo/geoip.dat
 curl -o $CRASHDIR/Country.mmdb -L https://cdn.jsdelivr.net/gh/DustinWin/geoip@mihomo/Country.mmdb
@@ -128,7 +128,7 @@ $CRASHDIR/start.sh restart
 ```
 ## 2. 导入 Windows 端（以 [Clash Verge](https://github.com/clash-verge-rev/clash-verge-rev) 导入 geoip.dat、Country.mmdb、geoip.metadb 和 ASN.mmdb 为例）
 以管理员身份运行 CMD，执行如下命令：
-```
+```shell
 taskkill /f /t /im "Clash Verge*"
 taskkill /f /t /im Clash-Verge*
 taskkill /f /t /im clash-meta*
