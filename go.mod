@@ -1,6 +1,6 @@
 module geoip
 
-go 1.24.4
+go 1.24.5
 
 require (
 	github.com/Loyalsoldier/geoip v0.0.0-20250328140756-d1eca9ff0658
