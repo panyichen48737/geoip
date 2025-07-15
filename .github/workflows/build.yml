@@ -31,7 +31,8 @@ jobs:
           echo "update_version=$(date -d '+8 hours' +%Y-%m-%d)" >> ${GITHUB_ENV}
           echo "private=https://raw.githubusercontent.com/XIU2/TrackersListCollection/master/all.txt" >> $GITHUB_ENV
           echo "cn=http://ftp.apnic.net/stats/apnic/delegated-apnic-latest" >> $GITHUB_ENV
-          echo "cn_asn=https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/ChinaASN/ChinaASN.list" >> $GITHUB_ENV
+          echo "cn_asn=https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/ChinaASN/ChinaASN_Resolve.list" >> $GITHUB_ENV
+          echo "cn_asn1=https://raw.githubusercontent.com/VirgilClyne/GetSomeFries/main/ruleset/ASN.China.list" >> $GITHUB_ENV
         shell: bash
 
       - name: Generate private
@@ -106,7 +107,8 @@ jobs:
         run: |
           mkdir -p ./tmp/
           mv -f ./output/Country*.mmdb ./mihomo/
-          curl -sSL ${cn_asn} | grep -v '#' | sed 's/,no-resolve$//' > ./tmp/cn.list
+          curl -sSL ${cn_asn} | grep -v '#' >> ./tmp/cn.list
+          curl -sSL ${cn_asn1} | grep -v '#' | sed 's/\s*\/\/.*//' >> ./tmp/cn.list
           for file in $(ls ./output/clash/classical/ | sed 's/\..*//'); do
             grep -v 'payload:' "./output/clash/classical/${file}.txt" | sed 's/^  - //' >> "./tmp/${file}.list"
             grep "\"${file}\":" ./config.json | awk -F'[][]' '{print $2}' | awk -F', ' '{for(i=1;i<=NF;i++){gsub(/"/, "", $i); gsub(/AS/, "", $i); print "IP-ASN,"$i}}' >> "./tmp/${file}.list"
