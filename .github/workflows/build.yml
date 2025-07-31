@@ -29,18 +29,13 @@ jobs:
       - name: Set variables
         run: |
           echo "update_version=$(date -d '+8 hours' +%Y-%m-%d)" >> ${GITHUB_ENV}
-          echo "media=https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/GlobalMedia/GlobalMedia.list" >> ${GITHUB_ENV}
           echo "games=https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Game/Game.list" >> ${GITHUB_ENV}
           echo "cn1=http://ftp.apnic.net/stats/apnic/delegated-apnic-latest" >> $GITHUB_ENV
-          echo "cn2=https://raw.githubusercontent.com/ChanthMiao/China-IPv4-List/release/cn.txt" >> $GITHUB_ENV
-          echo "cn3=https://raw.githubusercontent.com/ChanthMiao/China-IPv6-List/release/cn6.txt" >> $GITHUB_ENV
           echo "cn_asn=https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/ChinaASN/ChinaASN.list" >> $GITHUB_ENV
+          echo "cn_asn1=https://raw.githubusercontent.com/VirgilClyne/GetSomeFries/main/ruleset/ASN.China.list" >> $GITHUB_ENV
         shell: bash
 
-      - name: Gererate media
-        run: |
-          mkdir -p ./data/
-          curl -sSL ${media} | grep '^IP-CIDR' | awk -F',' '{print $2}' > ./data/media
+      
 
       - name: Gererate games
         run: |
@@ -52,8 +47,7 @@ jobs:
           curl -sSL ${cn1} | awk -F '|' '/CN/&&/ipv4/ {print $4 "/" 32-log($5)/log(2)}' >> ./data/cn
           curl -sSL ${cn1} | awk -F '|' '/CN/&&/ipv6/ {print $4 "/" $5}' >> ./data/cn
 
-          curl -sSL ${cn2} > ./ips/cn_ipv4.txt
-          curl -sSL ${cn3} > ./ips/cn_ipv6.txt
+          
 
       - name: Get GeoLite2
         env:
@@ -115,12 +109,19 @@ jobs:
         run: |
           mkdir -p ./tmp/
           mv -f ./output/Country*.mmdb ./mihomo/
-          curl -sSL ${cn_asn} | grep -v '#' | sed 's/,no-resolve$//' > ./tmp/cn.list
+          curl -sSL ${cn_asn} | grep -v '#' | sed 's/,no-resolve$//' >> ./tmp/cn.list
+          curl -sSL ${cn_asn1} | grep -v '#' | sed 's/\s*\/\/.*//' >> ./tmp/cn.list
+          sed -i '/^\s*$/d' ./tmp/cn.list
           for file in $(ls ./output/clash/classical/ | sed 's/\..*//'); do
             grep -v 'payload:' "./output/clash/classical/${file}.txt" | sed 's/^  - //' >> "./tmp/${file}.list"
             grep "\"${file}\":" ./config.json | awk -F'[][]' '{print $2}' | awk -F', ' '{for(i=1;i<=NF;i++){gsub(/"/, "", $i); gsub(/AS/, "", $i); print "IP-ASN,"$i}}' >> "./tmp/${file}.list"
             sort --ignore-case -u "./tmp/${file}.list" > "./ips/${file}ip.list"
           done
+
+          grep '^IP-CIDR' ./ips/cnip.list | cut -d',' -f2 > ./ips/cnip.txt
+          grep -Eo '([0-9]{1,3}\.){3}[0-9]{1,3}/[0-9]{1,2}' ./ips/cnip.txt > ./ips/cnip_ipv4.txt
+          grep -Eio '([a-f0-9]{0,4}:){2,7}[a-f0-9]{0,4}/[0-9]{1,3}' ./ips/cnip.txt > ./ips/cnip_ipv6.txt
+          
           rm -rf ./tmp* ./output*
 
       - name: Release and upload `ips` assets
@@ -196,20 +197,7 @@ jobs:
           git remote add origin "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
           git push -f origin sing-box
 
-      - name: Purge jsDelivr CDN
-        run: |
-          cd ./ips/ || exit 1
-          for file in $(ls); do
-            curl -i "https://purge.jsdelivr.net/gh/${{ github.repository }}@ips/${file}"
-          done
-          cd ../mihomo/ || exit 1
-          for file in $(ls); do
-            curl -i "https://purge.jsdelivr.net/gh/${{ github.repository }}@mihomo/${file}"
-          done
-          cd ../sing-box/ || exit 1
-          for file in $(ls); do
-            curl -i "https://purge.jsdelivr.net/gh/${{ github.repository }}@sing-box/${file}"
-          done
+      
 
       - name: Delete old workflow runs
         uses: Mattraks/delete-workflow-runs@v2
