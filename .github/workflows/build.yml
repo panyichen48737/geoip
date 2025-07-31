@@ -39,6 +39,7 @@ jobs:
 
       - name: Gererate games
         run: |
+          mkdir -p ./data/
           curl -sSL ${games} | grep '^IP-CIDR' | awk -F',' '{print $2}' > ./data/games
 
       - name: Generate cn and cn_ip
