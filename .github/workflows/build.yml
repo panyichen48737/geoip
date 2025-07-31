@@ -149,7 +149,7 @@ jobs:
             echo ':foreach cidr in \$cidrList do={'
             echo '  /ip firewall address-list add address=\$cidr list=CN'
             echo '}'
-          } > ./ips/cnip_ipv4.rsc
+          } > ./ips/rsc.rsc
 
           rm -rf ./tmp* ./output*
 
