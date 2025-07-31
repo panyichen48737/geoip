@@ -55,10 +55,10 @@ jobs:
           LICENSE_KEY: ${{ secrets.MAXMIND_GEOLITE2_LICENSE }}
         run: |
           mkdir -p ./output/ ./geolite2/
-          curl -L "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-ASN&license_key=${LICENSE_KEY}&suffix=tar.gz" | tar -zx -C ./
-          curl -L "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country&license_key=${LICENSE_KEY}&suffix=tar.gz" | tar -zx -C ./
-          curl -o ./GeoLite2-ASN-CSV.zip -L "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-ASN-CSV&license_key=${LICENSE_KEY}&suffix=zip"
-          curl -o ./GeoLite2-Country-CSV.zip -L "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country-CSV&license_key=${LICENSE_KEY}&suffix=zip"
+          curl -L -u ${LICENSE_KEY} 'https://download.maxmind.com/geoip/databases/GeoLite2-ASN/download?suffix=tar.gz' | tar -zx -C ./
+          curl -L -u ${LICENSE_KEY} 'https://download.maxmind.com/geoip/databases/GeoLite2-Country/download?suffix=tar.gz' | tar -zx -C ./
+          curl -L -u ${LICENSE_KEY} -o ./GeoLite2-ASN-CSV.zip -L 'https://download.maxmind.com/geoip/databases/GeoLite2-ASN-CSV/download?suffix=zip'
+          curl -L -u ${LICENSE_KEY} -o ./GeoLite2-Country-CSV.zip -L 'https://download.maxmind.com/geoip/databases/GeoLite2-Country-CSV/download?suffix=zip'
           unzip ./GeoLite2-ASN-CSV.zip
           unzip ./GeoLite2-Country-CSV.zip
           rm -f ./*.zip
