@@ -122,7 +122,35 @@ jobs:
           grep '^IP-CIDR' ./ips/cnip.list | cut -d',' -f2 > ./ips/cnip.txt
           grep -Eo '([0-9]{1,3}\.){3}[0-9]{1,3}/[0-9]{1,2}' ./ips/cnip.txt > ./ips/cnip_ipv4.txt
           grep -Eio '([a-f0-9]{0,4}:){2,7}[a-f0-9]{0,4}/[0-9]{1,3}' ./ips/cnip.txt > ./ips/cnip_ipv6.txt
-          
+
+
+      - name: Generate cnip_ipv4.rsc with full RouterOS script
+        run: |
+          {
+            echo '/ip firewall address-list remove [/ip firewall address-list find list=CN]'
+            echo '/ip firewall address-list'
+            echo 'add address=10.0.0.0/8 list=CN comment=private-network'
+            echo 'add address=100.64.0.0/10 list=CN comment=private-network'
+            echo 'add address=127.0.0.0/8 list=CN comment=private-network'
+            echo 'add address=169.254.0.0/16 list=CN comment=private-network'
+            echo 'add address=172.16.0.0/12 list=CN comment=private-network'
+            echo 'add address=192.0.0.0/24 list=CN comment=private-network'
+            echo 'add address=192.0.2.0/24 list=CN comment=private-network'
+            echo 'add address=192.88.99.0/24 list=CN comment=private-network'
+            echo 'add address=192.168.0.0/16 list=CN comment=private-network'
+            echo 'add address=198.51.100.0/24 list=CN comment=private-network'
+            echo 'add address=203.0.113.0/24 list=CN comment=private-network'
+            echo 'add address=224.0.0.0/3 list=CN comment=private-network'
+            echo ''
+            echo ':local cidrList {'
+            grep -vE '^#|^$' ./ips/cnip_ipv4.txt | sed 's/^/  "/; s/$/"/'
+            echo '}'
+            echo ''
+            echo ':foreach cidr in \$cidrList do={'
+            echo '  /ip firewall address-list add address=\$cidr list=CN'
+            echo '}'
+          } > ./ips/cnip_ipv4.rsc
+
           rm -rf ./tmp* ./output*
 
       - name: Release and upload `ips` assets
