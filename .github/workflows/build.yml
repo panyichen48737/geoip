@@ -124,7 +124,7 @@ jobs:
           curl -sSL ${cn_asn1} | perl -ne '/^(IP-ASN,\d+),/ && print "$1\n"' | sort --ignore-case > ./ips/cn-asn.list
 
 
-      - name: Generate cnip_ipv4.rsc with full RouterOS script
+     # - name: Generate cnip_ipv4.rsc with full RouterOS script
         run: |
           {
             echo '/ip firewall address-list remove [/ip firewall address-list find list=CN]'
