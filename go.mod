@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	github.com/Loyalsoldier/geoip v0.0.0-20250814002849-4a8193482d04
-	github.com/klauspost/compress v1.18.0
+	github.com/klauspost/compress v1.18.1
 	github.com/maxmind/mmdbwriter v1.0.0
 	github.com/oschwald/geoip2-golang v1.13.0
 	github.com/oschwald/maxminddb-golang v1.13.1
