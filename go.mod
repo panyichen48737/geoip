@@ -1,32 +1,24 @@
 module geoip
 
-go 1.25.0
+go 1.27.1
 
 require (
-	github.com/Loyalsoldier/geoip v0.0.0-20250814002849-4a8193482d04
-	github.com/klauspost/compress v1.18.0
-	github.com/maxmind/mmdbwriter v1.0.0
-	github.com/oschwald/geoip2-golang v1.13.0
-	github.com/oschwald/maxminddb-golang v1.13.1
-	github.com/sagernet/sing-box v1.12.3
-	github.com/spf13/cobra v1.9.1
-	github.com/tailscale/hujson v0.0.0-20250605163823-992244df8c5a
-	github.com/tidwall/gjson v1.18.0
-	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba
-	google.golang.org/protobuf v1.36.8
+	github.com/Loyalsoldier/geoip v0.0.0-20260904065453-1503074d8aee
+	github.com/maxmind/mmdbwriter v1.2.0
+	github.com/oschwald/geoip2-golang/v2 v2.4.0
+	github.com/oschwald/maxminddb-golang/v2 v2.6.0
+	github.com/spf13/cobra v1.10.2
+	github.com/tailscale/hujson v0.0.0-20260727124030-b80ff77dac4f
+	github.com/tidwall/gjson v1.19.0
+	go4.org/netipx v0.0.0-20260823151212-3075585bcbeb
+	google.golang.org/protobuf v1.36.12
 	gopkg.in/yaml.v2 v2.4.0
 )
 
 require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/miekg/dns v1.1.67 // indirect
-	github.com/sagernet/sing v0.7.6-0.20250815070458-d33ece7a184f // indirect
-	github.com/spf13/pflag v1.0.7 // indirect
-	github.com/tidwall/match v1.1.1 // indirect
+	github.com/spf13/pflag v1.0.10 // indirect
+	github.com/tidwall/match v1.2.0 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
-	golang.org/x/mod v0.27.0 // indirect
-	golang.org/x/net v0.43.0 // indirect
-	golang.org/x/sync v0.16.0 // indirect
-	golang.org/x/sys v0.35.0 // indirect
-	golang.org/x/tools v0.36.0 // indirect
+	golang.org/x/sys v0.48.0 // indirect
 )

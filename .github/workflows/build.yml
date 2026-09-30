@@ -10,6 +10,17 @@ on:
       - ".gitignore"
       - "LICENSE"
       - "*.md"
+  pull_request:
+    branches:
+      - master
+    paths-ignore:
+      - ".gitignore"
+      - "LICENSE"
+      - "*.md"
+
+permissions:
+  contents: write
+  actions: write
 
 jobs:
   build:
@@ -17,12 +28,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout codebase
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
           go-version-file: ./go.mod
 
@@ -30,6 +41,7 @@ jobs:
         run: |
           echo "update_version=$(date -d '+8 hours' +%Y-%m-%d)" >> ${GITHUB_ENV}
           echo "games=https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Game/Game.list" >> ${GITHUB_ENV}
+          echo "media=https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/GlobalMedia/GlobalMedia.list" >> ${GITHUB_ENV}
           echo "cn1=http://ftp.apnic.net/stats/apnic/delegated-apnic-latest" >> $GITHUB_ENV
           echo "cn_asn=https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Surge/ChinaASN/ChinaASN.list" >> $GITHUB_ENV
           echo "cn_asn1=https://raw.githubusercontent.com/VirgilClyne/GetSomeFries/main/ruleset/ASN.China.list" >> $GITHUB_ENV
@@ -40,6 +52,11 @@ jobs:
         run: |
           mkdir -p ./data/
           curl -sSL ${games} | perl -ne '/^(IP-CIDR.*),([^,]+),/ && print "$2\n"' > ./data/games
+
+      - name: Gererate media
+        run: |
+          mkdir -p ./data/
+          curl -sSL ${media} | perl -ne '/^(IP-CIDR.*),([^,]+),/ && print "$2\n"' > ./data/media
 
       - name: Generate cn and cn_ip
         run: |
@@ -115,17 +132,18 @@ jobs:
           done
 
           grep '^IP-CIDR' ./ips/cnip.list | cut -d',' -f2 > ./ips/cnip.txt
-          grep -Eo '([0-9]{1,3}\.){3}[0-9]{1,3}/[0-9]{1,2}' ./ips/cnip.txt > ./ips/cnip_ipv4.txt
-          grep -Eio '([a-f0-9]{0,4}:){2,7}[a-f0-9]{0,4}/[0-9]{1,3}' ./ips/cnip.txt > ./ips/cnip_ipv6.txt
+          grep -Eo '([0-9]{1,3}\.){3}[0-9]{1,3}/[0-9]{1,2}' ./ips/cnip.txt | tee ./ips/cnip_ipv4.txt > ./ips/cn_ipv4.txt
+          grep -Eio '([a-f0-9]{0,4}:){2,7}[a-f0-9]{0,4}/[0-9]{1,3}' ./ips/cnip.txt | tee ./ips/cnip_ipv6.txt > ./ips/cn_ipv6.txt
           
           cat ./config.json | grep '\"netflix\":' | grep -o 'AS[0-9]\+' | sed 's/^/IP-ASN,/' | sort --ignore-case > ./ips/netflix-asn.list
           cat ./config.json | grep '\"telegram\":' | grep -o 'AS[0-9]\+' | sed 's/^/IP-ASN,/' | sort --ignore-case > ./ips/telegram-asn.list
           curl -sSL ${cn_asn} | perl -ne '/^(IP-ASN,\d+),/ && print "$1\n"' | sort --ignore-case > ./ips/cn-asn.list
-          curl -sSL ${cn_asn1} | perl -ne '/^(IP-ASN,\d+),/ && print "$1\n"' | sort --ignore-case > ./ips/cn-asn.list
+          curl -sSL ${cn_asn1} | perl -ne '/^(IP-ASN,\d+),/ && print "$1\n"' | sort --ignore-case >> ./ips/cn-asn.list
 
           rm -rf ./tmp* ./output*
 
       - name: Release and upload `ips` assets
+        if: github.event_name != 'pull_request'
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
@@ -140,6 +158,7 @@ jobs:
           file: ./ips/*
 
       - name: Commit and push `ips` branch
+        if: github.event_name != 'pull_request'
         run: |
           cd ./ips/ || exit 1
           git init
@@ -151,6 +170,7 @@ jobs:
           git push -f origin ips
 
       - name: Release and upload `mihomo-geodata` assets
+        if: github.event_name != 'pull_request'
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
@@ -164,6 +184,7 @@ jobs:
           file: ./mihomo-geodata/*
 
       - name: Commit and push `mihomo-geodata` branch
+        if: github.event_name != 'pull_request'
         run: |
           cd ./mihomo-geodata/ || exit 1
           git init
@@ -175,6 +196,7 @@ jobs:
           git push -f origin mihomo-geodata
 
       - name: Release and upload `sing-box-geodata` assets
+        if: github.event_name != 'pull_request'
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
@@ -188,6 +210,7 @@ jobs:
           file: ./sing-box-geodata/*
 
       - name: Commit and push `sing-box-geodata` branch
+        if: github.event_name != 'pull_request'
         run: |
           cd ./sing-box-geodata/ || exit 1
           git init
@@ -199,6 +222,22 @@ jobs:
           git push -f origin sing-box-geodata
 
      
+
+      - name: Purge jsDelivr CDN
+        if: github.event_name != 'pull_request'
+        run: |
+          cd ./ips/ || exit 1
+          for file in $(ls); do
+            curl -i "https://purge.jsdelivr.net/gh/${{ github.repository }}@ips/${file}"
+          done
+          cd ../mihomo-geodata/ || exit 1
+          for file in $(ls); do
+            curl -i "https://purge.jsdelivr.net/gh/${{ github.repository }}@mihomo-geodata/${file}"
+          done
+          cd ../sing-box-geodata/ || exit 1
+          for file in $(ls); do
+            curl -i "https://purge.jsdelivr.net/gh/${{ github.repository }}@sing-box-geodata/${file}"
+          done
 
       - name: Delete old workflow runs
         uses: Mattraks/delete-workflow-runs@v2
