@@ -143,3 +143,8 @@ curl -fo "%APPDATA%\io.github.clash-verge-rev.clash-verge-rev\geoip.metadb" -L h
 curl -fo "%APPDATA%\io.github.clash-verge-rev.clash-verge-rev\ASN.mmdb" -L https://cdn.jsdelivr.net/gh/panyichen48737/geoip@mihomo-geodata/Country-ASN.mmdb
 pause
 ```
+
+# 四、 开发说明
+① 本仓库实际使用的 geoip 程序库来自 go.mod 中的 [Loyalsoldier/geoip](https://github.com/Loyalsoldier/geoip) 模块（即 `github.com/Loyalsoldier/geoip/lib` 和 `github.com/Loyalsoldier/geoip/plugin/*`），根目录的 `main.go`、`init.go`、`list.go`、`convert.go`、`merge.go` 和 `lookup.go` 引用的都是该模块  
+② 仓库根目录下的 `lib/` 和 `plugin/` 是 fork 上游时一并带入的副本，**不参与构建**：没有任何代码 import 它们，CI 执行的是 `go build ./`（只编译根包），因此改动它们不会影响任何产物，且会随 go.mod 中模块版本的升级逐渐过时  
+③ 需要改变产物内容时，改根目录的 `*.go` 和 `config.json` 即可；无需本地编译，[GitHub Actions](https://github.com/panyichen48737/geoip/actions) 会自动完成构建

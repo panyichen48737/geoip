@@ -10,6 +10,9 @@ on:
       - ".gitignore"
       - "LICENSE"
       - "*.md"
+  # 注意：PR 触发的运行里 `Get GeoLite2` 依赖 MAXMIND_GEOLITE2_LICENSE。Dependabot 发起的 PR
+  # 只能读取 Settings → Secrets and variables → Dependabot 中的 secrets，读不到普通 Actions
+  # secrets；该处若没有同名 secret，Dependabot PR 的构建会停在这一步。
   pull_request:
     branches:
       - master
@@ -55,18 +58,18 @@ jobs:
       - name: Gererate games
         run: |
           mkdir -p ./data/
-          curl -sSL ${games} | perl -ne '/^(IP-CIDR.*),([^,]+),/ && print "$2\n"' > ./data/games
+          curl -fsSL ${games} | perl -ne '/^(IP-CIDR.*),([^,]+),/ && print "$2\n"' > ./data/games
 
       - name: Gererate media
         run: |
           mkdir -p ./data/
-          curl -sSL ${media} | perl -ne '/^(IP-CIDR.*),([^,]+),/ && print "$2\n"' > ./data/media
+          curl -fsSL ${media} | perl -ne '/^(IP-CIDR.*),([^,]+),/ && print "$2\n"' > ./data/media
 
       - name: Generate cn and cn_ip
         run: |
           mkdir -p ./ips/
-          curl -sSL ${cn1} | awk -F '|' '/CN/&&/ipv4/ {print $4 "/" 32-log($5)/log(2)}' >> ./data/cn
-          curl -sSL ${cn1} | awk -F '|' '/CN/&&/ipv6/ {print $4 "/" $5}' >> ./data/cn
+          curl -fsSL ${cn1} | awk -F '|' '/CN/&&/ipv4/ {print $4 "/" 32-log($5)/log(2)}' >> ./data/cn
+          curl -fsSL ${cn1} | awk -F '|' '/CN/&&/ipv6/ {print $4 "/" $5}' >> ./data/cn
 
           
 
@@ -75,10 +78,10 @@ jobs:
           LICENSE_KEY: ${{ secrets.MAXMIND_GEOLITE2_LICENSE }}
         run: |
           mkdir -p ./output/ ./geolite2/
-          curl -L -u ${LICENSE_KEY} 'https://download.maxmind.com/geoip/databases/GeoLite2-ASN/download?suffix=tar.gz' | tar -zx -C ./
-          curl -L -u ${LICENSE_KEY} 'https://download.maxmind.com/geoip/databases/GeoLite2-Country/download?suffix=tar.gz' | tar -zx -C ./
-          curl -L -u ${LICENSE_KEY} -o ./GeoLite2-ASN-CSV.zip -L 'https://download.maxmind.com/geoip/databases/GeoLite2-ASN-CSV/download?suffix=zip'
-          curl -L -u ${LICENSE_KEY} -o ./GeoLite2-Country-CSV.zip -L 'https://download.maxmind.com/geoip/databases/GeoLite2-Country-CSV/download?suffix=zip'
+          curl -fL -u ${LICENSE_KEY} 'https://download.maxmind.com/geoip/databases/GeoLite2-ASN/download?suffix=tar.gz' | tar -zx -C ./
+          curl -fL -u ${LICENSE_KEY} 'https://download.maxmind.com/geoip/databases/GeoLite2-Country/download?suffix=tar.gz' | tar -zx -C ./
+          curl -fL -u ${LICENSE_KEY} -o ./GeoLite2-ASN-CSV.zip -L 'https://download.maxmind.com/geoip/databases/GeoLite2-ASN-CSV/download?suffix=zip'
+          curl -fL -u ${LICENSE_KEY} -o ./GeoLite2-Country-CSV.zip -L 'https://download.maxmind.com/geoip/databases/GeoLite2-Country-CSV/download?suffix=zip'
           unzip ./GeoLite2-ASN-CSV.zip
           unzip ./GeoLite2-Country-CSV.zip
           rm -f ./*.zip
@@ -92,19 +95,19 @@ jobs:
           go build ./
           ./geoip convert -c ./config.json
 
+      - name: Get geoip-all.dat and Country-all.mmdb relative files
+        run: |
+          curl -f -o ./output/geoip-all.dat -L https://raw.githubusercontent.com/Loyalsoldier/geoip/release/geoip.dat
+          curl -f -o ./output/Country-all.mmdb -L https://raw.githubusercontent.com/Loyalsoldier/geoip/release/Country.mmdb
+          curl -f -o ./output/Country-ASN-all.mmdb -L https://raw.githubusercontent.com/Loyalsoldier/geoip/release/Country-asn.mmdb
+
       - name: Verify mmdb files
         run: |
           cd ./output/ || exit 1
-          go install -v github.com/maxmind/mmdbverify@latest
+          go install -v github.com/maxmind/mmdbverify@v1.1.0
           for name in $(ls *.mmdb); do
             $(go env GOPATH)/bin/mmdbverify -file ${name}
           done
-
-      - name: Get geoip-all.dat and Country-all.mmdb relative files
-        run: |
-          curl -o ./output/geoip-all.dat -L https://raw.githubusercontent.com/Loyalsoldier/geoip/release/geoip.dat
-          curl -o ./output/Country-all.mmdb -L https://raw.githubusercontent.com/Loyalsoldier/geoip/release/Country.mmdb
-          curl -o ./output/Country-ASN-all.mmdb -L https://raw.githubusercontent.com/Loyalsoldier/geoip/release/Country-asn.mmdb
 
       - name: Build db and metadb file
         run: |
@@ -141,10 +144,23 @@ jobs:
           
           cat ./config.json | grep '\"netflix\":' | grep -o 'AS[0-9]\+' | sed 's/^/IP-ASN,/' | sort --ignore-case > ./ips/netflix-asn.list
           cat ./config.json | grep '\"telegram\":' | grep -o 'AS[0-9]\+' | sed 's/^/IP-ASN,/' | sort --ignore-case > ./ips/telegram-asn.list
-          curl -sSL ${cn_asn} | perl -ne '/^(IP-ASN,\d+),/ && print "$1\n"' | sort --ignore-case > ./ips/cn-asn.list
-          curl -sSL ${cn_asn1} | perl -ne '/^(IP-ASN,\d+),/ && print "$1\n"' | sort --ignore-case >> ./ips/cn-asn.list
+          curl -fsSL ${cn_asn} | perl -ne '/^(IP-ASN,\d+),/ && print "$1\n"' | sort --ignore-case > ./ips/cn-asn.list
+          curl -fsSL ${cn_asn1} | perl -ne '/^(IP-ASN,\d+),/ && print "$1\n"' | sort --ignore-case >> ./ips/cn-asn.list
 
           rm -rf ./tmp* ./output*
+
+      - name: Sanity check outputs
+        run: |
+          status=0
+          for f in ./data/games ./data/media ./data/cn ./ips/* ./mihomo-geodata/* ./sing-box-geodata/*; do
+            if [ ! -s "${f}" ]; then
+              echo "::error::输出为空或缺失：${f}"
+              status=1
+            fi
+          done
+          [ "${status}" -eq 0 ] || exit 1
+          wc -l ./data/games ./data/media ./data/cn ./ips/*.list
+          ls -l ./mihomo-geodata/ ./sing-box-geodata/
 
       - name: Release and upload `ips` assets
         if: github.event_name != 'pull_request'

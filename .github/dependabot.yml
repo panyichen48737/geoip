@@ -1,8 +1,7 @@
 version: 2
 updates:
   - package-ecosystem: "github-actions"
-    directories:
-      - "/*"
+    directory: "/"
     schedule:
       interval: "daily"
       timezone: "Asia/Shanghai"
@@ -11,8 +10,7 @@ updates:
       separator: "-"
 
   - package-ecosystem: "gomod"
-    directories:
-      - "/*"
+    directory: "/"
     schedule:
       interval: "daily"
       timezone: "Asia/Shanghai"
