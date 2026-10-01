@@ -1,6 +1,6 @@
 # 一、 文件说明
 ## 1. 规则集文件类型
-① 重构上游项目 [Loyalsoldier/geoip](https://github.com/Loyalsoldier/geoip)，生成供下游项目 [DustinWin/ruleset_geodata](https://github.com/DustinWin/ruleset_geodata) 使用的 IP 数据源文件  
+① 重构上游项目 [Loyalsoldier/geoip](https://github.com/Loyalsoldier/geoip)，生成供下游项目 [panyichen48737/ruleset_geodata](https://github.com/panyichen48737/ruleset_geodata) 使用的 IP 数据源文件  
 ② 数据源文件为 [mihomo 内核](https://github.com/MetaCubeX/mihomo) rule-set 规则集文件（.list 格式），包含：`IP-ASN`、`IP-CIDR` 和 `IP-CIDR6` 规则类型，配置 `behavior: classical` 和 `format: text` 后可直接使用  
 ③ mihomo 内核 geodata 规则集文件，包括：geoip.dat、Country.mmdb、geoip.metadb 和 ASN.mmdb 等  
 ④ [sing-box 内核](https://github.com/SagerNet/sing-box) geodata 规则集文件，包括：geoip.db 等  
