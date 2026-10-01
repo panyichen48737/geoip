@@ -4,9 +4,11 @@ permissions:
   contents: write
 
 on:
-  schedule:
-    - cron: "0 8 * * *"
-      timezone: "Asia/Shanghai"
+  # 定时同步已移除。go.mod 的模块升级由 Dependabot 每天开 PR 覆盖（见
+  # .github/dependabot.yml 的 gomod 项），而本仓库重写过的 config.json、build.yml、
+  # go.mod、go.sum、README.md 每次从 DustinWin/main 合并都会撞冲突——2026-09-27、
+  # 09-28、09-29 三次 run 全部栽在这几个文件上，没有冲突时它又什么也没做。
+  # 需要同步上游时手动触发本 workflow。
   workflow_dispatch:
 
 jobs:
@@ -31,5 +33,6 @@ jobs:
       - name: Sync check
         if: failure()
         run: |
-          echo "[Error] 由于上游仓库的 workflow 文件变更，导致 GitHub 自动暂停了本次自动更新，你需要手动 Sync Fork 一次。"
+          echo "[Error] 与上游同步失败：多数是 config.json、build.yml、go.mod、go.sum、README.md 的合并冲突（GitHub 也会因上游 workflow 文件变更而暂停自动更新）。"
+          echo "[Error] 此时不要用网页上的 Sync Fork——那会把本仓库的定制内容全部覆盖掉，请手动处理冲突。"
           exit 1
