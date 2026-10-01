@@ -146,5 +146,5 @@ pause
 
 # 四、 开发说明
 ① 本仓库实际使用的 geoip 程序库来自 go.mod 中的 [Loyalsoldier/geoip](https://github.com/Loyalsoldier/geoip) 模块（即 `github.com/Loyalsoldier/geoip/lib` 和 `github.com/Loyalsoldier/geoip/plugin/*`），根目录的 `main.go`、`init.go`、`list.go`、`convert.go`、`merge.go` 和 `lookup.go` 引用的都是该模块  
-② 仓库根目录下的 `lib/` 和 `plugin/` 是 fork 上游时一并带入的副本，**不参与构建**：没有任何代码 import 它们，CI 执行的是 `go build ./`（只编译根包），因此改动它们不会影响任何产物，且会随 go.mod 中模块版本的升级逐渐过时  
+② 仓库根目录下不再有 `lib/` 和 `plugin/`：fork 上游时一并带入的那两份副本与 go.mod 里的模块重复，**不参与构建**（根目录的 `*.go` 引用的都是 `github.com/Loyalsoldier/geoip/lib` 和 `github.com/Loyalsoldier/geoip/plugin/*`，CI 执行的是 `go build ./`），已删除；删除后 `go build ./` 和 `go vet ./...` 均通过。再次同步上游时它们可能被带回来，可以按同样理由再删一次  
 ③ 需要改变产物内容时，改根目录的 `*.go` 和 `config.json` 即可；无需本地编译，[GitHub Actions](https://github.com/panyichen48737/geoip/actions) 会自动完成构建

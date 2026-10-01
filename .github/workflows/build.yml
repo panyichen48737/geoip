@@ -112,7 +112,12 @@ jobs:
       - name: Build db and metadb file
         run: |
           cd ./output/ || exit 1
-          go install -trimpath -ldflags="-s -w -buildid=" github.com/metacubex/geo/cmd/geo@master
+          # 固定在下面的 commit 上，它等于 metacubex/geo 当前的 master（上游最后一次提交是
+          # 2024-07-18，之后没再动过）。`@master` 是每次构建现解析的浮动目标，上游哪天推个
+          # 新提交，转换器就跟着换了，.metadb / .db 的内容可能随之变化而这里毫不知情。
+          # 换成 commit 之后，这次和下次构建用的是同一个二进制。升级时替换 SHA 即可：
+          #   gh api repos/metacubex/geo/commits/master --jq .sha
+          go install -trimpath -ldflags="-s -w -buildid=" github.com/metacubex/geo/cmd/geo@a4db326ccfd7e21276d5d05f4f7e512d14415553
           for file in $(ls *.dat | sed 's/\..*//'); do
             geo convert ip -i v2ray -o meta -f "./${file}.metadb" "./${file}.dat"
             geo convert ip -i v2ray -o sing -f "./${file}.db" "./${file}.dat"
@@ -142,8 +147,20 @@ jobs:
           grep -Eo '([0-9]{1,3}\.){3}[0-9]{1,3}/[0-9]{1,2}' ./ips/cnip.txt | tee ./ips/cnip_ipv4.txt > ./ips/cn_ipv4.txt
           grep -Eio '([a-f0-9]{0,4}:){2,7}[a-f0-9]{0,4}/[0-9]{1,3}' ./ips/cnip.txt | tee ./ips/cnip_ipv6.txt > ./ips/cn_ipv6.txt
           
-          cat ./config.json | grep '\"netflix\":' | grep -o 'AS[0-9]\+' | sed 's/^/IP-ASN,/' | sort --ignore-case > ./ips/netflix-asn.list
-          cat ./config.json | grep '\"telegram\":' | grep -o 'AS[0-9]\+' | sed 's/^/IP-ASN,/' | sort --ignore-case > ./ips/telegram-asn.list
+          # netflix / telegram 的 ASN 列表，两处都改过：
+          # 一是抽取方式。上游写法是 `grep '"netflix":' config.json | grep -o 'AS[0-9]\+'`，
+          # 抓整行再抽 AS 号，前提是数组必须写在一行里；config.json 一旦被格式化或手工折行，
+          # 首行没 AS 号就抽出空文件（Sanity check 拦得住），首行留了一个 AS 号则静默只抽到
+          # 那一条（拦不住）。改成用 awk 圈出数组范围，与写在一行还是几行无关。
+          # 二是前缀。抽出来的 token 带 "AS"，而 mihomo 的 IP-ASN 规则把 payload 原样存下
+          # （rules/common/ipasn.go 的 NewIPASN），匹配时与 LookupASN 返回的裸数字做字符串
+          # 比较（component/mmdb/reader.go，字段是 uint32）——`IP-ASN,AS2906` 永远不等于
+          # "2906"，这两份列表在 mihomo 里一直是死规则。剥掉前缀，与 cn-asn.list 对齐。
+          for asnkey in netflix telegram; do
+            awk -v key="${asnkey}" '$0 ~ "\"" key "\":" { inlist = 1 } inlist { print } inlist && /\]/ { exit }' ./config.json \
+              | grep -o 'AS[0-9]\+' | sed 's/^AS/IP-ASN,/' | sort --ignore-case -u > "./ips/${asnkey}-asn.list"
+          done
+
           # `ASN.China.list` 的行形如 `IP-ASN,4134`，数字后面没有逗号；原先的模式要求
           # 必须跟一个逗号，对它 5076 行全部匹配失败，而它正是本列表里量最大的一份。
           # ChinaASN 的 `IP-ASN,10111,no-resolve` 去掉尾逗号后输出不变。
