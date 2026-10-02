@@ -57,19 +57,29 @@ jobs:
      
       - name: Gererate games
         run: |
-          mkdir -p ./data/
-          curl -fsSL ${games} | perl -ne '/^(IP-CIDR.*),([^,]+),/ && print "$2\n"' > ./data/games
+          mkdir -p ./data/ ./tmp/
+          # 下载和过滤分开写，理由同 `Get GeoLite2` 那步：默认 shell 是 `bash -e` 但没有
+          # pipefail，管道退出码取 perl 的，curl 失败被吞掉。`-f` 只管 HTTP 错误状态；
+          # 传到一半断流是 exit 18，此时**已写入的那部分留在文件里**，文件非空、非空检查
+          # 放行 —— 而 gamesip 只有 46 条，小到没进条目数守卫，丢了没有任何人会知道。
+          curl -fsSL ${games} -o ./tmp/games.raw
+          perl -ne '/^(IP-CIDR.*),([^,]+),/ && print "$2\n"' ./tmp/games.raw > ./data/games
 
       - name: Gererate media
         run: |
-          mkdir -p ./data/
-          curl -fsSL ${media} | perl -ne '/^(IP-CIDR.*),([^,]+),/ && print "$2\n"' > ./data/media
+          mkdir -p ./data/ ./tmp/
+          # 同上。
+          curl -fsSL ${media} -o ./tmp/media.raw
+          perl -ne '/^(IP-CIDR.*),([^,]+),/ && print "$2\n"' ./tmp/media.raw > ./data/media
 
       - name: Generate cn and cn_ip
         run: |
-          mkdir -p ./ips/
-          curl -fsSL ${cn1} | awk -F '|' '/CN/&&/ipv4/ {print $4 "/" 32-log($5)/log(2)}' >> ./data/cn
-          curl -fsSL ${cn1} | awk -F '|' '/CN/&&/ipv6/ {print $4 "/" $5}' >> ./data/cn
+          mkdir -p ./ips/ ./tmp/
+          # 同上：下载与过滤分开。另外原来对**同一个** ${cn1} 调了两次 curl，一次构建把
+          # APNIC 那个文件下了两遍，现在只下一次、两次 awk 读同一个文件。
+          curl -fsSL ${cn1} -o ./tmp/apnic.raw
+          awk -F '|' '/CN/&&/ipv4/ {print $4 "/" 32-log($5)/log(2)}' ./tmp/apnic.raw >> ./data/cn
+          awk -F '|' '/CN/&&/ipv6/ {print $4 "/" $5}' ./tmp/apnic.raw >> ./data/cn
 
           
 
