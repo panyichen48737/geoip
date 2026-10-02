@@ -78,7 +78,11 @@ jobs:
           LICENSE_KEY: ${{ secrets.MAXMIND_GEOLITE2_LICENSE }}
         run: |
           mkdir -p ./output/ ./geolite2/
-          curl -fL -u ${LICENSE_KEY} 'https://download.maxmind.com/geoip/databases/GeoLite2-ASN/download?suffix=tar.gz' | tar -zx -C ./
+          # 不再下载 `GeoLite2-ASN` 的 mmdb：它下来没人用。config.json 里 `sourceMMDBURI` 只出现
+          # 两次、都是 Country.mmdb；插件源码里硬编码的 GeoLite2 路径只有 Country.mmdb 和五个 CSV；
+          # 两个 geodata 分支的产物清单里也没有 GeoLite2-*.mmdb。`Country-ASN.mmdb` 的 ASN 取自下面
+          # 的 ASN CSV，不是这个 mmdb。省掉它之后每次构建只耗 3 次 MaxMind 下载，而账号额度是
+          # 24 小时 30 次 —— 24 小时内的构建上限从 7 次提到 10 次。
           curl -fL -u ${LICENSE_KEY} 'https://download.maxmind.com/geoip/databases/GeoLite2-Country/download?suffix=tar.gz' | tar -zx -C ./
           curl -fL -u ${LICENSE_KEY} -o ./GeoLite2-ASN-CSV.zip -L 'https://download.maxmind.com/geoip/databases/GeoLite2-ASN-CSV/download?suffix=zip'
           curl -fL -u ${LICENSE_KEY} -o ./GeoLite2-Country-CSV.zip -L 'https://download.maxmind.com/geoip/databases/GeoLite2-Country-CSV/download?suffix=zip'
@@ -86,7 +90,6 @@ jobs:
           unzip ./GeoLite2-Country-CSV.zip
           rm -f ./*.zip
           mv -f ./GeoLite2-Country_*/*.mmdb ./output/
-          mv -f ./GeoLite2-ASN_*/*.mmdb ./output/
           mv -f ./GeoLite2-ASN-CSV_*/*.csv ./geolite2/
           mv -f ./GeoLite2-Country-CSV_*/*.csv ./geolite2/
 
