@@ -83,12 +83,17 @@ jobs:
           # 两个 geodata 分支的产物清单里也没有 GeoLite2-*.mmdb。`Country-ASN.mmdb` 的 ASN 取自下面
           # 的 ASN CSV，不是这个 mmdb。省掉它之后每次构建只耗 3 次 MaxMind 下载，而账号额度是
           # 24 小时 30 次 —— 24 小时内的构建上限从 7 次提到 10 次。
-          curl -fL -u ${LICENSE_KEY} 'https://download.maxmind.com/geoip/databases/GeoLite2-Country/download?suffix=tar.gz' | tar -zx -C ./
+          # 下载和 `tar` 分开写：这是一个 `bash -e` 但没有 pipefail 的默认 shell，写成
+          # `curl ... | tar -zx` 时管道的退出码取 tar 的，429 之类会以
+          # `gzip: stdin: unexpected end of file` / `tar: Child returned status 1` 的形式出现，
+          # 真正的原因（`curl: (22) ... 429`）被淹在中间。拆开后 curl 的退出码直接中止步骤。
+          curl -fL -u ${LICENSE_KEY} -o ./GeoLite2-Country.tar.gz 'https://download.maxmind.com/geoip/databases/GeoLite2-Country/download?suffix=tar.gz'
+          tar -zxf ./GeoLite2-Country.tar.gz -C ./
           curl -fL -u ${LICENSE_KEY} -o ./GeoLite2-ASN-CSV.zip -L 'https://download.maxmind.com/geoip/databases/GeoLite2-ASN-CSV/download?suffix=zip'
           curl -fL -u ${LICENSE_KEY} -o ./GeoLite2-Country-CSV.zip -L 'https://download.maxmind.com/geoip/databases/GeoLite2-Country-CSV/download?suffix=zip'
           unzip ./GeoLite2-ASN-CSV.zip
           unzip ./GeoLite2-Country-CSV.zip
-          rm -f ./*.zip
+          rm -f ./*.zip ./*.tar.gz
           mv -f ./GeoLite2-Country_*/*.mmdb ./output/
           mv -f ./GeoLite2-ASN-CSV_*/*.csv ./geolite2/
           mv -f ./GeoLite2-Country-CSV_*/*.csv ./geolite2/
@@ -189,21 +194,28 @@ jobs:
           wc -l ./data/games ./data/media ./data/cn ./ips/*.list
           ls -l ./mihomo-geodata/ ./sing-box-geodata/
 
-          # CN 条目数守卫。只查「非空」拦不住上游源换格式造成的静默缩水（cn-asn 那次
+          # 条目数守卫。只查「非空」拦不住上游源换格式造成的静默缩水（cn-asn 那次
           # 就是：列表里少了 5076 行，构建照样绿），而 cn 缩水的后果是这部分流量改走代理。
           # 拿上一次发布的列表比一比。取不到（首次运行、网络抖动）只警告，不判死构建。
-          if curl -fsSL --max-time 60 "https://raw.githubusercontent.com/${{ github.repository }}/ips/cnip.list" -o /tmp/cnip-previous.list; then
-            previous=$(wc -l < /tmp/cnip-previous.list)
-            current=$(wc -l < ./ips/cnip.list)
-            floor=$(( previous * 80 / 100 ))
-            echo "cnip.list：上次 ${previous} 行 -> 本次 ${current} 行（下限 ${floor}）"
-            if [ "${current}" -lt "${floor}" ]; then
-              echo "::error::cnip.list 由 ${previous} 行掉到 ${current} 行，跌幅超过 20%，很可能是某个上游源失效或格式变化"
-              exit 1
+          # 只守这四个上千行的表：gamesip(46 行)/privateip(18)/telegramip(12)/
+          # netflix-asn(4)/telegram-asn(5) 体量太小，百分比守卫在正常波动上就会误报。
+          # cn_ipv4.txt 与 cnip_ipv4.txt、cn_ipv6.txt 与 cnip_ipv6.txt 是逐字节相同的别名
+          # （blob SHA 相同），cnip.txt 是 cnip.list 的另一种格式、同一批条目 —— 都随
+          # cnip.list 一起守住了，不必重复列。
+          for name in cnip.list cn-asn.list netflixip.list mediaip.list; do
+            if curl -fsSL --max-time 60 "https://raw.githubusercontent.com/${{ github.repository }}/ips/${name}" -o /tmp/previous.list; then
+              previous=$(wc -l < /tmp/previous.list)
+              current=$(wc -l < "./ips/${name}")
+              floor=$(( previous * 80 / 100 ))
+              echo "${name}：上次 ${previous} 行 -> 本次 ${current} 行（下限 ${floor}）"
+              if [ "${current}" -lt "${floor}" ]; then
+                echo "::error::${name} 由 ${previous} 行掉到 ${current} 行，跌幅超过 20%，很可能是某个上游源失效或格式变化"
+                exit 1
+              fi
+            else
+              echo "::warning::取不到已发布的 ${name}，跳过跌幅守卫"
             fi
-          else
-            echo "::warning::取不到已发布的 cnip.list，跳过跌幅守卫"
-          fi
+          done
 
       - name: Release and upload `ips` assets
         if: github.event_name != 'pull_request'
