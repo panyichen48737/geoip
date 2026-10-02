@@ -109,6 +109,39 @@ jobs:
           curl -f -o ./output/Country-all.mmdb -L https://raw.githubusercontent.com/Loyalsoldier/geoip/release/Country.mmdb
           curl -f -o ./output/Country-ASN-all.mmdb -L https://raw.githubusercontent.com/Loyalsoldier/geoip/release/Country-asn.mmdb
 
+          # 新鲜度守卫。这三个文件取自 Loyalsoldier 的 release 分支，而那个分支**没有定时
+          # 构建**：它的 build.yml 只挂 workflow_dispatch 和 pull_request，最近的 run 是
+          # 10-01T15:00、10-01T01:34、09-30T23:32 —— 按需触发。它一旦安静下来，我们这边毫无
+          # 信号：文件照下、构建照绿、产物是旧的。mmdb 尾部元数据自带 build_epoch（生成
+          # 时刻），读出来比一比就知道上游那份数据有多旧。
+          # 只警告不判死：输入变旧是「该看一眼」，判死会因为一个上游镜像停滞，把其他本来
+          # 新鲜的产物一起挡住不发。geoip-all.dat 是 v2ray 格式、不内嵌时间戳，守不了 ——
+          # 三个文件由上游同一次重建产出，两个 mmdb 新鲜基本说明它也新鲜。
+          now=$(date +%s)
+          for name in Country-all.mmdb Country-ASN-all.mmdb; do
+            # build_epoch 键后面是控制字节 + 4 字节大端值，控制字节实测是 `0402`。
+            # 这个形状是从样本归纳的、不是从格式规范推的，所以编码不符就当作读不懂：
+            # 宁可漏报，也别拿一个读歪的数字去比。
+            # `|| true`：读失败（文件缺、格式变）时别让 `-e` 把整个步骤带走 —— 那就成了
+            # fail-close，与「只警告」的意图相反。
+            epoch=$(perl -0777 -ne '
+              my $i = rindex($_, "\xab\xcd\xef"."MaxMind.com");
+              my $blk = $i < 0 ? "" : substr($_, $i + 14);
+              my $k = index($blk, "build_epoch");
+              print unpack("N", substr($blk, $k + 13, 4))
+                if $i >= 0 && $k >= 0 && unpack("H*", substr($blk, $k + 11, 2)) eq "0402";
+            ' "./output/${name}" 2>/dev/null) || true
+            if [ -z "${epoch}" ]; then
+              echo "::warning::读不出 ${name} 的 build_epoch，跳过新鲜度检查"
+              continue
+            fi
+            age=$(( (now - epoch) / 86400 ))
+            echo "${name}：数据生成于 $(date -u -d "@${epoch}" +%Y-%m-%dT%H:%M:%SZ)，${age} 天前"
+            if [ "${age}" -gt 7 ]; then
+              echo "::warning::${name} 的数据已有 ${age} 天，上游 release 分支可能没在重建"
+            fi
+          done
+
       - name: Verify mmdb files
         run: |
           cd ./output/ || exit 1
