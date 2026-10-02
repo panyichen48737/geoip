@@ -62,14 +62,17 @@ jobs:
           # pipefail，管道退出码取 perl 的，curl 失败被吞掉。`-f` 只管 HTTP 错误状态；
           # 传到一半断流是 exit 18，此时**已写入的那部分留在文件里**，文件非空、非空检查
           # 放行 —— 而 gamesip 只有 46 条，小到没进条目数守卫，丢了没有任何人会知道。
-          curl -fsSL ${games} -o ./tmp/games.raw
+          # 拆开之后再加 `--retry 3`：断流这类瞬时错误 curl 会整个重来一遍，正好补上。
+          # `--max-time 300` 是不让它卡死 —— 没有它，连接挂住会一直等到 job 默认的 6 小时。
+          # 注意 MaxMind 那三个刻意不加 `--retry`，原因见 `Get GeoLite2` 那步。
+          curl -fsSL --retry 3 --max-time 300 ${games} -o ./tmp/games.raw
           perl -ne '/^(IP-CIDR.*),([^,]+),/ && print "$2\n"' ./tmp/games.raw > ./data/games
 
       - name: Gererate media
         run: |
           mkdir -p ./data/ ./tmp/
           # 同上。
-          curl -fsSL ${media} -o ./tmp/media.raw
+          curl -fsSL --retry 3 --max-time 300 ${media} -o ./tmp/media.raw
           perl -ne '/^(IP-CIDR.*),([^,]+),/ && print "$2\n"' ./tmp/media.raw > ./data/media
 
       - name: Generate cn and cn_ip
@@ -77,7 +80,7 @@ jobs:
           mkdir -p ./ips/ ./tmp/
           # 同上：下载与过滤分开。另外原来对**同一个** ${cn1} 调了两次 curl，一次构建把
           # APNIC 那个文件下了两遍，现在只下一次、两次 awk 读同一个文件。
-          curl -fsSL ${cn1} -o ./tmp/apnic.raw
+          curl -fsSL --retry 3 --max-time 300 ${cn1} -o ./tmp/apnic.raw
           awk -F '|' '/CN/&&/ipv4/ {print $4 "/" 32-log($5)/log(2)}' ./tmp/apnic.raw >> ./data/cn
           awk -F '|' '/CN/&&/ipv6/ {print $4 "/" $5}' ./tmp/apnic.raw >> ./data/cn
 
@@ -97,10 +100,15 @@ jobs:
           # `curl ... | tar -zx` 时管道的退出码取 tar 的，429 之类会以
           # `gzip: stdin: unexpected end of file` / `tar: Child returned status 1` 的形式出现，
           # 真正的原因（`curl: (22) ... 429`）被淹在中间。拆开后 curl 的退出码直接中止步骤。
-          curl -fL -u ${LICENSE_KEY} -o ./GeoLite2-Country.tar.gz 'https://download.maxmind.com/geoip/databases/GeoLite2-Country/download?suffix=tar.gz'
+          # 这三处刻意**不加** `--retry`，与文件里其他 curl 不同：curl 手册写明 `--retry` 会
+          # 重试 HTTP 429（"an HTTP 408, 429, 500, ..."），而 MaxMind 的额度用尽正是 429，
+          # 且其文档说失败请求过多会触发限流 —— 重试只会越锁越死。
+          # `--max-time 300` 与额度无关（超时同样是已经发出去的一次请求，额度和挂住 6 小时
+          # 一样，但至少不拖住整个 job）。
+          curl -fL --max-time 300 -u ${LICENSE_KEY} -o ./GeoLite2-Country.tar.gz 'https://download.maxmind.com/geoip/databases/GeoLite2-Country/download?suffix=tar.gz'
           tar -zxf ./GeoLite2-Country.tar.gz -C ./
-          curl -fL -u ${LICENSE_KEY} -o ./GeoLite2-ASN-CSV.zip -L 'https://download.maxmind.com/geoip/databases/GeoLite2-ASN-CSV/download?suffix=zip'
-          curl -fL -u ${LICENSE_KEY} -o ./GeoLite2-Country-CSV.zip -L 'https://download.maxmind.com/geoip/databases/GeoLite2-Country-CSV/download?suffix=zip'
+          curl -fL --max-time 300 -u ${LICENSE_KEY} -o ./GeoLite2-ASN-CSV.zip -L 'https://download.maxmind.com/geoip/databases/GeoLite2-ASN-CSV/download?suffix=zip'
+          curl -fL --max-time 300 -u ${LICENSE_KEY} -o ./GeoLite2-Country-CSV.zip -L 'https://download.maxmind.com/geoip/databases/GeoLite2-Country-CSV/download?suffix=zip'
           unzip ./GeoLite2-ASN-CSV.zip
           unzip ./GeoLite2-Country-CSV.zip
           rm -f ./*.zip ./*.tar.gz
@@ -115,9 +123,11 @@ jobs:
 
       - name: Get geoip-all.dat and Country-all.mmdb relative files
         run: |
-          curl -f -o ./output/geoip-all.dat -L https://raw.githubusercontent.com/Loyalsoldier/geoip/release/geoip.dat
-          curl -f -o ./output/Country-all.mmdb -L https://raw.githubusercontent.com/Loyalsoldier/geoip/release/Country.mmdb
-          curl -f -o ./output/Country-ASN-all.mmdb -L https://raw.githubusercontent.com/Loyalsoldier/geoip/release/Country-asn.mmdb
+          # `--retry 3` 在这里同样无害（注意不是 MaxMind 那三个，见 `Get GeoLite2` 那步）；
+          # raw.githubusercontent 是 CDN，断流重来一次基本就好。`--max-time 300` 防卡死。
+          curl -f --retry 3 --max-time 300 -o ./output/geoip-all.dat -L https://raw.githubusercontent.com/Loyalsoldier/geoip/release/geoip.dat
+          curl -f --retry 3 --max-time 300 -o ./output/Country-all.mmdb -L https://raw.githubusercontent.com/Loyalsoldier/geoip/release/Country.mmdb
+          curl -f --retry 3 --max-time 300 -o ./output/Country-ASN-all.mmdb -L https://raw.githubusercontent.com/Loyalsoldier/geoip/release/Country-asn.mmdb
 
           # 新鲜度守卫。这三个文件取自 Loyalsoldier 的 release 分支，而那个分支**没有定时
           # 构建**：它的 build.yml 只挂 workflow_dispatch 和 pull_request，最近的 run 是
@@ -218,8 +228,8 @@ jobs:
           # 排序去重必须等两个源都读完：两源重叠 844 条，放在第一个源之后只会把第二份
           # 5076 行原样追加在有序结果尾部。curl 也从没有 pipefail 的管道头部挪了出来——
           # 这是一个 `bash -e` 的默认 shell，管道里失败的 curl 只会静默产出空列表。
-          curl -fsSL ${cn_asn} -o ./tmp/cn-asn.list
-          curl -fsSL ${cn_asn1} -o ./tmp/cn-asn1.list
+          curl -fsSL --retry 3 --max-time 300 ${cn_asn} -o ./tmp/cn-asn.list
+          curl -fsSL --retry 3 --max-time 300 ${cn_asn1} -o ./tmp/cn-asn1.list
           cat ./tmp/cn-asn.list ./tmp/cn-asn1.list | perl -ne '/^(IP-ASN,\d+)/ && print "$1\n"' | sort --ignore-case -u > ./ips/cn-asn.list
 
           rm -rf ./tmp* ./output*
@@ -246,7 +256,8 @@ jobs:
           # （blob SHA 相同），cnip.txt 是 cnip.list 的另一种格式、同一批条目 —— 都随
           # cnip.list 一起守住了，不必重复列。
           for name in cnip.list cn-asn.list netflixip.list mediaip.list; do
-            if curl -fsSL --max-time 60 "https://raw.githubusercontent.com/${{ github.repository }}/ips/${name}" -o /tmp/previous.list; then
+            # `--retry 3`：取不到就只是跳过守卫，一次网络抖动不该让守卫静默失效。
+            if curl -fsSL --retry 3 --max-time 60 "https://raw.githubusercontent.com/${{ github.repository }}/ips/${name}" -o /tmp/previous.list; then
               previous=$(wc -l < /tmp/previous.list)
               current=$(wc -l < "./ips/${name}")
               floor=$(( previous * 80 / 100 ))
