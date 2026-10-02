@@ -129,11 +129,14 @@ jobs:
           curl -f --retry 3 --max-time 300 -o ./output/Country-all.mmdb -L https://raw.githubusercontent.com/Loyalsoldier/geoip/release/Country.mmdb
           curl -f --retry 3 --max-time 300 -o ./output/Country-ASN-all.mmdb -L https://raw.githubusercontent.com/Loyalsoldier/geoip/release/Country-asn.mmdb
 
-          # 新鲜度守卫。这三个文件取自 Loyalsoldier 的 release 分支，而那个分支**没有定时
-          # 构建**：它的 build.yml 只挂 workflow_dispatch 和 pull_request，最近的 run 是
-          # 10-01T15:00、10-01T01:34、09-30T23:32 —— 按需触发。它一旦安静下来，我们这边毫无
-          # 信号：文件照下、构建照绿、产物是旧的。mmdb 尾部元数据自带 build_epoch（生成
-          # 时刻），读出来比一比就知道上游那份数据有多旧。
+          # 新鲜度守卫。这三个文件取自 Loyalsoldier 的 release 分支，那个分支由上游的**周四
+          # 定时构建**刷新（build.yml 里 `cron: "0 0 * * 4"`，UTC），不是按需触发：schedule
+          # 事件的 run 每周四都有，09-24 / 09-17 / 09-10 / 09-03 / 08-27 全绿。但这个定时
+          # 既不保证准点也不保证不漏 —— 08-27 那次迟了 7 小时 41 分，2026-10-01 那个周四
+          # 干脆没跑（最后一条 schedule 停在 09-24，当天 release 是被 15:00 的手动 dispatch
+          # 补刷的）。所以它一旦安静下来，我们这边毫无信号：文件照下、构建照绿、产物是旧的。
+          # mmdb 尾部元数据自带 build_epoch（生成时刻），读出来比一比就知道上游那份数据
+          # 有多旧。
           # 只警告不判死：输入变旧是「该看一眼」，判死会因为一个上游镜像停滞，把其他本来
           # 新鲜的产物一起挡住不发。geoip-all.dat 是 v2ray 格式、不内嵌时间戳，守不了 ——
           # 三个文件由上游同一次重建产出，两个 mmdb 新鲜基本说明它也新鲜。
