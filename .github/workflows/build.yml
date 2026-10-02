@@ -355,17 +355,23 @@ jobs:
       - name: Purge jsDelivr CDN
         if: github.event_name != 'pull_request'
         run: |
+          # 这一步是「通知 CDN 提前作废缓存」，纯属尽力而为：不作废的话 jsDelivr 过几分钟也会
+          # 自己过期。所以它不该有判死构建的权力 —— 2026-10-02T05:30 那次就是这里
+          # `curl: (35) Recv failure: Connection reset by peer` 把一次第 1-21 步全绿、三个分支
+          # 都已推送成功的构建判成了红的，还连累后面 `Delete old workflow runs` 被 skip。
+          # 三个目录加起来是 28 个顺序请求，每个都是一次瞬时故障的机会，所以既加
+          # `--retry 3 --max-time 30`，也用 `||` 兜底：失败只警告。
           cd ./ips/ || exit 1
           for file in $(ls); do
-            curl -i "https://purge.jsdelivr.net/gh/${{ github.repository }}@ips/${file}"
+            curl -i --retry 3 --max-time 30 "https://purge.jsdelivr.net/gh/${{ github.repository }}@ips/${file}" || echo "::warning::purge 失败：ips/${file}"
           done
           cd ../mihomo-geodata/ || exit 1
           for file in $(ls); do
-            curl -i "https://purge.jsdelivr.net/gh/${{ github.repository }}@mihomo-geodata/${file}"
+            curl -i --retry 3 --max-time 30 "https://purge.jsdelivr.net/gh/${{ github.repository }}@mihomo-geodata/${file}" || echo "::warning::purge 失败：mihomo-geodata/${file}"
           done
           cd ../sing-box-geodata/ || exit 1
           for file in $(ls); do
-            curl -i "https://purge.jsdelivr.net/gh/${{ github.repository }}@sing-box-geodata/${file}"
+            curl -i --retry 3 --max-time 30 "https://purge.jsdelivr.net/gh/${{ github.repository }}@sing-box-geodata/${file}" || echo "::warning::purge 失败：sing-box-geodata/${file}"
           done
 
       - name: Delete old workflow runs
