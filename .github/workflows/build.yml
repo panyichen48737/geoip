@@ -99,19 +99,64 @@ jobs:
           # 下载和 `tar` 分开写：这是一个 `bash -e` 但没有 pipefail 的默认 shell，写成
           # `curl ... | tar -zx` 时管道的退出码取 tar 的，429 之类会以
           # `gzip: stdin: unexpected end of file` / `tar: Child returned status 1` 的形式出现，
-          # 真正的原因（`curl: (22) ... 429`）被淹在中间。拆开后 curl 的退出码直接中止步骤。
+          # 真正的原因（`curl: (22) ... 429`）被淹在中间。拆开后能直接拿到 curl 的状态码 ——
+          # 下面正是靠它区分 429。
           # 这三处刻意**不加** `--retry`，与文件里其他 curl 不同：curl 手册写明 `--retry` 会
           # 重试 HTTP 429（"an HTTP 408, 429, 500, ..."），而 MaxMind 的额度用尽正是 429，
           # 且其文档说失败请求过多会触发限流 —— 重试只会越锁越死。
           # `--max-time 300` 与额度无关（超时同样是已经发出去的一次请求，额度和挂住 6 小时
           # 一样，但至少不拖住整个 job）。
-          curl -fL --max-time 300 -u ${LICENSE_KEY} -o ./GeoLite2-Country.tar.gz 'https://download.maxmind.com/geoip/databases/GeoLite2-Country/download?suffix=tar.gz'
+          #
+          # 429（额度用尽）时回落到 Loyalsoldier 的 release 镜像：那上面放的就是同一批 MaxMind
+          # 文件、连带日期的目录名都一样，所以回落不影响后面那些 `mv ./GeoLite2-*_*/*`。
+          # **只在 429 回落**：401/403 是密钥配错（PR 触发时 Dependabot secrets 是空的，会走到
+          # 这里）、5xx/`000` 是对方或网络故障 —— 这些该红就红，拿一份一周前的数据盖过去只会
+          # 把问题藏起来。
+          # 不用 `-f` 也是为此：`-f` 只给一个笼统的退出码 22，拿不到 429 和 403 的区别。
+          # 连接失败时 `%{http_code}` 是 `000`（实测）。
+          mirror=https://raw.githubusercontent.com/Loyalsoldier/geoip/refs/heads/release
+          use_mirror=0
+          for spec in 'GeoLite2-Country.tar.gz:GeoLite2-Country:tar.gz' \
+                      'GeoLite2-ASN-CSV.zip:GeoLite2-ASN-CSV:zip' \
+                      'GeoLite2-Country-CSV.zip:GeoLite2-Country-CSV:zip'; do
+            file=${spec%%:*}
+            rest=${spec#*:}
+            edition=${rest%%:*}
+            suffix=${rest##*:}
+            code=$(curl -L --max-time 300 -u "${LICENSE_KEY}" -w '%{http_code}' -o "./${file}" \
+                     "https://download.maxmind.com/geoip/databases/${edition}/download?suffix=${suffix}" || true)
+            case "${code}" in
+              200) echo "MaxMind：${file} 已下载" ;;
+              429) echo "::warning::MaxMind 配额用尽（429），三份输入改从 release 镜像取"
+                   use_mirror=1
+                   break ;;
+              *)   echo "::error::MaxMind 下载 ${file} 失败，HTTP ${code}（只有 429 才回落镜像）"
+                   exit 1 ;;
+            esac
+          done
+          if [ "${use_mirror}" = "1" ]; then
+            # 三份一起换，不做单份回落：额度是账号级的，中途用尽时前面那份已经下来了，混着用
+            # 会静默产出「今天的 mmdb + 一周前的 CSV」。镜像上这三份的日期本来就各不相同
+            # （上游每周四只刷它当次下到的那几份，实测 Country 与 Country-CSV 停在 09-29、
+            # ASN-CSV 是 10-01），所以宁可整组同源。
+            for file in GeoLite2-Country.tar.gz GeoLite2-ASN-CSV.zip GeoLite2-Country-CSV.zip; do
+              curl -fL --retry 3 --max-time 300 -o "./${file}" "${mirror}/${file}"
+            done
+          fi
           tar -zxf ./GeoLite2-Country.tar.gz -C ./
-          curl -fL --max-time 300 -u ${LICENSE_KEY} -o ./GeoLite2-ASN-CSV.zip -L 'https://download.maxmind.com/geoip/databases/GeoLite2-ASN-CSV/download?suffix=zip'
-          curl -fL --max-time 300 -u ${LICENSE_KEY} -o ./GeoLite2-Country-CSV.zip -L 'https://download.maxmind.com/geoip/databases/GeoLite2-Country-CSV/download?suffix=zip'
           unzip ./GeoLite2-ASN-CSV.zip
           unzip ./GeoLite2-Country-CSV.zip
           rm -f ./*.zip ./*.tar.gz
+          # 快照日期取自解出来的目录名（`GeoLite2-Country_20260929/`），不用额外发请求。
+          # 回落之后它就是「这份数据到底多旧」的唯一凭据 —— 平时也打出来，好对得上号。
+          cutoff=$(date -u -d '7 days ago' +%Y%m%d)
+          for dir in ./GeoLite2-Country_* ./GeoLite2-ASN-CSV_* ./GeoLite2-Country-CSV_*; do
+            stamp=${dir##*_}
+            echo "输入快照：$(basename "${dir}")"
+            if [ "${stamp}" -lt "${cutoff}" ]; then
+              echo "::warning::$(basename "${dir}") 的快照日期 ${stamp} 已超过 7 天，上游 release 分支可能没在重建"
+            fi
+          done
           mv -f ./GeoLite2-Country_*/*.mmdb ./output/
           mv -f ./GeoLite2-ASN-CSV_*/*.csv ./geolite2/
           mv -f ./GeoLite2-Country-CSV_*/*.csv ./geolite2/
