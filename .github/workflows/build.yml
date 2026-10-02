@@ -136,9 +136,10 @@ jobs:
           done
           if [ "${use_mirror}" = "1" ]; then
             # 三份一起换，不做单份回落：额度是账号级的，中途用尽时前面那份已经下来了，混着用
-            # 会静默产出「今天的 mmdb + 一周前的 CSV」。镜像上这三份的日期本来就各不相同
-            # （上游每周四只刷它当次下到的那几份，实测 Country 与 Country-CSV 停在 09-29、
-            # ASN-CSV 是 10-01），所以宁可整组同源。
+            # 会静默产出「今天的 mmdb + 一周前的 CSV」。逐份日期不同本来就是常态，而且不是
+            # 镜像的特征 —— 那是 MaxMind 自己的快照节奏：2026-10-02 那次三份全走 MaxMind，
+            # 解出来照样是 09-29 / 10-02 / 09-29，镜像只是照抄它下到的那一批。所以这里不比
+            # 日期差多少，只要求整组同源。
             for file in GeoLite2-Country.tar.gz GeoLite2-ASN-CSV.zip GeoLite2-Country-CSV.zip; do
               curl -fL --retry 3 --max-time 300 -o "./${file}" "${mirror}/${file}"
             done
@@ -148,13 +149,13 @@ jobs:
           unzip ./GeoLite2-Country-CSV.zip
           rm -f ./*.zip ./*.tar.gz
           # 快照日期取自解出来的目录名（`GeoLite2-Country_20260929/`），不用额外发请求。
-          # 回落之后它就是「这份数据到底多旧」的唯一凭据 —— 平时也打出来，好对得上号。
+          # 它是「这份数据到底多旧」的唯一凭据 —— 逐份不同是常态，看单份没意义，看整组。
           cutoff=$(date -u -d '7 days ago' +%Y%m%d)
           for dir in ./GeoLite2-Country_* ./GeoLite2-ASN-CSV_* ./GeoLite2-Country-CSV_*; do
             stamp=${dir##*_}
             echo "输入快照：$(basename "${dir}")"
             if [ "${stamp}" -lt "${cutoff}" ]; then
-              echo "::warning::$(basename "${dir}") 的快照日期 ${stamp} 已超过 7 天，上游 release 分支可能没在重建"
+              echo "::warning::$(basename "${dir}") 的快照日期 ${stamp} 已超过 7 天（要么 MaxMind 自己没重建，要么回落时镜像没在重建）"
             fi
           done
           mv -f ./GeoLite2-Country_*/*.mmdb ./output/
@@ -427,6 +428,25 @@ jobs:
           for file in $(ls); do
             curl -i --retry 3 --max-time 30 "https://purge.jsdelivr.net/gh/${{ github.repository }}@sing-box-geodata/${file}" || echo "::warning::purge 失败：sing-box-geodata/${file}"
           done
+
+      # 数据更新完主动通知 ruleset_geodata 重建，避免它 03:00 的定时跑在这批数据之前。
+      # 只在成功构建里发（前序步骤失败时本步骤本就不会执行），且跳过 push / PR —— 那些是
+      # 代码改动，不一定产出新数据。需要 secret DISPATCH_TOKEN（对 ruleset_geodata 有
+      # Contents 读写，或 classic PAT 的 repo 权限）；没配置就只提示、不影响本仓库构建。
+      - name: Notify `ruleset_geodata`
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        env:
+          TOKEN: ${{ secrets.DISPATCH_TOKEN }}
+        run: |
+          if [ -z "${TOKEN}" ]; then
+            echo "::notice::未配置 DISPATCH_TOKEN，跳过通知 ruleset_geodata"
+            exit 0
+          fi
+          curl -fsSL --retry 3 --retry-delay 5 -X POST \
+            -H "Authorization: Bearer ${TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/panyichen48737/ruleset_geodata/dispatches" \
+            -d '{"event_type":"data-updated"}'
 
       - name: Delete old workflow runs
         uses: Mattraks/delete-workflow-runs@v2
