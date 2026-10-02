@@ -55,7 +55,7 @@ jobs:
         shell: bash
 
      
-      - name: Gererate games
+      - name: Generate games
         run: |
           mkdir -p ./data/ ./tmp/
           # 下载和过滤分开写，理由同 `Get GeoLite2` 那步：默认 shell 是 `bash -e` 但没有
@@ -68,7 +68,7 @@ jobs:
           curl -fsSL --retry 3 --max-time 300 ${games} -o ./tmp/games.raw
           perl -ne '/^(IP-CIDR.*),([^,]+),/ && print "$2\n"' ./tmp/games.raw > ./data/games
 
-      - name: Gererate media
+      - name: Generate media
         run: |
           mkdir -p ./data/ ./tmp/
           # 同上。
@@ -250,20 +250,26 @@ jobs:
           # 条目数守卫。只查「非空」拦不住上游源换格式造成的静默缩水（cn-asn 那次
           # 就是：列表里少了 5076 行，构建照样绿），而 cn 缩水的后果是这部分流量改走代理。
           # 拿上一次发布的列表比一比。取不到（首次运行、网络抖动）只警告，不判死构建。
-          # 只守这四个上千行的表：gamesip(46 行)/privateip(18)/telegramip(12)/
-          # netflix-asn(4)/telegram-asn(5) 体量太小，百分比守卫在正常波动上就会误报。
+          # 分两档：上千行的大表用 80%，几十行的小表用 50% —— 小表的绝对波动小，80% 那档
+          # 会被正常增减打穿（gamesip 46 行，掉 10 条就是 22%）。
+          # 不设「至少 N 行」这类绝对下限：ips 分支是 force-push 的，查不到历史发行版，
+          # 拿不出有依据的 N，猜一个只会造出假失败。
           # cn_ipv4.txt 与 cnip_ipv4.txt、cn_ipv6.txt 与 cnip_ipv6.txt 是逐字节相同的别名
           # （blob SHA 相同），cnip.txt 是 cnip.list 的另一种格式、同一批条目 —— 都随
           # cnip.list 一起守住了，不必重复列。
-          for name in cnip.list cn-asn.list netflixip.list mediaip.list; do
+          for spec in cnip.list:80 cn-asn.list:80 netflixip.list:80 mediaip.list:80 \
+                      gamesip.list:50 privateip.list:50 telegramip.list:50 \
+                      netflix-asn.list:50 telegram-asn.list:50; do
+            name=${spec%%:*}
+            pct=${spec##*:}
             # `--retry 3`：取不到就只是跳过守卫，一次网络抖动不该让守卫静默失效。
             if curl -fsSL --retry 3 --max-time 60 "https://raw.githubusercontent.com/${{ github.repository }}/ips/${name}" -o /tmp/previous.list; then
               previous=$(wc -l < /tmp/previous.list)
               current=$(wc -l < "./ips/${name}")
-              floor=$(( previous * 80 / 100 ))
-              echo "${name}：上次 ${previous} 行 -> 本次 ${current} 行（下限 ${floor}）"
+              floor=$(( previous * pct / 100 ))
+              echo "${name}：上次 ${previous} 行 -> 本次 ${current} 行（下限 ${floor}，${pct}%）"
               if [ "${current}" -lt "${floor}" ]; then
-                echo "::error::${name} 由 ${previous} 行掉到 ${current} 行，跌幅超过 20%，很可能是某个上游源失效或格式变化"
+                echo "::error::${name} 由 ${previous} 行掉到 ${current} 行，低于 ${pct}% 下限，很可能是某个上游源失效或格式变化"
                 exit 1
               fi
             else
