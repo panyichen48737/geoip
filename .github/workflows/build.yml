@@ -335,7 +335,7 @@ jobs:
           tag: ips
           overwrite: true
           body: |
-            供下游项目 [DustinWin/ruleset_geodata](https://github.com/DustinWin/ruleset_geodata) 使用的 IP 数据源文件
+            供下游项目 [panyichen48737/ruleset_geodata](https://github.com/panyichen48737/ruleset_geodata) 使用的 IP 数据源文件
             [ShellCrash](https://github.com/juewuy/ShellCrash) 中 CN_IP 绕过内核所需文件
             文件更新于 ${{ env.update_version }}
           file_glob: true
