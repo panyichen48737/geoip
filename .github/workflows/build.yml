@@ -107,14 +107,20 @@ jobs:
           # `--max-time 300` 与额度无关（超时同样是已经发出去的一次请求，额度和挂住 6 小时
           # 一样，但至少不拖住整个 job）。
           #
-          # 429（额度用尽）时回落到 Loyalsoldier 的 release 镜像：那上面放的就是同一批 MaxMind
-          # 文件、连带日期的目录名都一样，所以回落不影响后面那些 `mv ./GeoLite2-*_*/*`。
+          # 429（额度用尽）时回落到镜像：镜像上放的就是同一批 MaxMind 文件、连带日期的目录名
+          # 都一样，所以回落不影响后面那些 `mv ./GeoLite2-*_*/*`。
+          # 首选我们自己的 `geolite2-mirror` release —— 由下面「Publish GeoLite2 mirror」那步在
+          # 每次 MaxMind 下载成功时覆盖刷新，所以它最多只落后一次构建；Loyalsoldier 的 release
+          # 分支是每周四才刷一次（那个 cron 还会迟到、会漏跑），只在我们的镜像取不到时兜底。
+          # 这级兜底是必要的、不是保险：第一次跑时我们那份还没建出来，覆盖上传的那一瞬间资产
+          # 也会短暂 404 —— 只留一级，这两种情况都会把构建直接弄红。
           # **只在 429 回落**：401/403 是密钥配错（PR 触发时 Dependabot secrets 是空的，会走到
-          # 这里）、5xx/`000` 是对方或网络故障 —— 这些该红就红，拿一份一周前的数据盖过去只会
-          # 把问题藏起来。
+          # 这里）、5xx/`000` 是对方或网络故障 —— 这些该红就红，拿一份旧数据盖过去只会把问题
+          # 藏起来。
           # 不用 `-f` 也是为此：`-f` 只给一个笼统的退出码 22，拿不到 429 和 403 的区别。
           # 连接失败时 `%{http_code}` 是 `000`（实测）。
-          mirror=https://raw.githubusercontent.com/Loyalsoldier/geoip/refs/heads/release
+          own_mirror=https://github.com/${{ github.repository }}/releases/download/geolite2-mirror
+          upstream_mirror=https://raw.githubusercontent.com/Loyalsoldier/geoip/refs/heads/release
           use_mirror=0
           for spec in 'GeoLite2-Country.tar.gz:GeoLite2-Country:tar.gz' \
                       'GeoLite2-ASN-CSV.zip:GeoLite2-ASN-CSV:zip' \
@@ -127,7 +133,7 @@ jobs:
                      "https://download.maxmind.com/geoip/databases/${edition}/download?suffix=${suffix}" || true)
             case "${code}" in
               200) echo "MaxMind：${file} 已下载" ;;
-              429) echo "::warning::MaxMind 配额用尽（429），三份输入改从 release 镜像取"
+              429) echo "::warning::MaxMind 配额用尽（429），三份输入改从镜像取"
                    use_mirror=1
                    break ;;
               *)   echo "::error::MaxMind 下载 ${file} 失败，HTTP ${code}（只有 429 才回落镜像）"
@@ -141,12 +147,33 @@ jobs:
             # 解出来照样是 09-29 / 10-02 / 09-29，镜像只是照抄它下到的那一批。所以这里不比
             # 日期差多少，只要求整组同源。
             for file in GeoLite2-Country.tar.gz GeoLite2-ASN-CSV.zip GeoLite2-Country-CSV.zip; do
-              curl -fL --retry 3 --max-time 300 -o "./${file}" "${mirror}/${file}"
+              got=0
+              for base in "${own_mirror}" "${upstream_mirror}"; do
+                if curl -fL --retry 3 --max-time 300 -o "./${file}" "${base}/${file}"; then
+                  got=1
+                  break
+                fi
+                echo "::warning::${file} 没能从 ${base} 取到，换下一个来源"
+              done
+              if [ "${got}" != "1" ]; then
+                echo "::error::${file} 在两处镜像上都取不到"
+                exit 1
+              fi
             done
           fi
           tar -zxf ./GeoLite2-Country.tar.gz -C ./
           unzip ./GeoLite2-ASN-CSV.zip
           unzip ./GeoLite2-Country-CSV.zip
+          # 归档下一句就删了，而发布那步必须是个独立的 `uses:` 步骤、没法在这里调，所以先把
+          # 三份挪进 ./mirror-src/ 留给它。`./*.zip` / `./*.tar.gz` 这两个 glob 不进子目录，
+          # 删除照旧。只在三份都真从 MaxMind 下到时才留（`use_mirror=0`）—— 回落那一路手上是
+          # 别人（或我们自己上一份）的数据，回写等于原样再发一次、还把日期刷成「刚刚」，正好
+          # 造出「看着很新、其实是旧的」。
+          if [ "${use_mirror}" = "0" ]; then
+            mkdir -p ./mirror-src
+            cp ./GeoLite2-Country.tar.gz ./GeoLite2-ASN-CSV.zip ./GeoLite2-Country-CSV.zip ./mirror-src/
+            echo "MIRROR_SRC=1" >> "${GITHUB_ENV}"
+          fi
           rm -f ./*.zip ./*.tar.gz
           # 快照日期取自解出来的目录名（`GeoLite2-Country_20260929/`），不用额外发请求。
           # 它是「这份数据到底多旧」的唯一凭据 —— 逐份不同是常态，看单份没意义，看整组。
@@ -161,6 +188,32 @@ jobs:
           mv -f ./GeoLite2-Country_*/*.mmdb ./output/
           mv -f ./GeoLite2-ASN-CSV_*/*.csv ./geolite2/
           mv -f ./GeoLite2-Country-CSV_*/*.csv ./geolite2/
+
+      - name: Publish GeoLite2 mirror
+        # 把刚下到的三份原始归档覆盖发布到 `geolite2-mirror` 这个 release，供上面那步在 429 时
+        # 回落。该不该发由 `Get GeoLite2` 里的 `use_mirror` 决定，理由写在那边 `cp` 的注释上。
+        # 发布失败不判死构建 —— 产物已经好了，和 `Purge jsDelivr CDN` 同一个道理。
+        if: github.event_name != 'pull_request' && env.MIRROR_SRC == '1'
+        continue-on-error: true
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          release_name: geolite2-mirror
+          tag: geolite2-mirror
+          # 覆盖上传：配合 action 里 `check_duplicates` 的默认值 true，同名资产先删再传，release
+          # 本身不重建。这样就把它钉死在三份归档的大小上 —— 改走分支的话，这三份已压缩、git 做
+          # 不了增量，每次内容变化都得留一份全新的 ~17 MB blob（按 MaxMind 的发布节奏约 2 GB/年）。
+          overwrite: true
+          # 这两项必须显式写：action 里 `make_latest` 默认是 "true"，不关掉就会把
+          # `sing-box-geodata` 的 Latest 抢走（下游是按 Latest 取文件的）。
+          prerelease: true
+          make_latest: "false"
+          body: |
+            MaxMind GeoLite2 的原始输入（Country mmdb 的 tar.gz、ASN 与 Country 的 CSV zip）。
+            每次 MaxMind 下载成功时覆盖刷新，供本仓库构建在配额用尽（429）时回落使用。
+            文件更新于 ${{ env.update_version }}
+          file_glob: true
+          file: ./mirror-src/*
 
       - name: Build geoip files
         run: |
@@ -442,11 +495,15 @@ jobs:
             echo "::notice::未配置 DISPATCH_TOKEN，跳过通知 ruleset_geodata"
             exit 0
           fi
-          curl -fsSL --retry 3 --retry-delay 5 -X POST \
+          # 通知失败（token 过期/权限不足）不该把数据管线的构建弄红：数据本身没问题，
+          # 大不了退回 ruleset_geodata 的 03:00 定时。
+          if ! curl -fsSL --max-time 60 --retry 3 --retry-delay 5 -X POST \
             -H "Authorization: Bearer ${TOKEN}" \
             -H "Accept: application/vnd.github+json" \
             "https://api.github.com/repos/panyichen48737/ruleset_geodata/dispatches" \
-            -d '{"event_type":"data-updated"}'
+            -d '{"event_type":"data-updated"}'; then
+            echo "::warning::通知 ruleset_geodata 失败（token 可能已过期或权限不足），本轮构建不受影响"
+          fi
 
       - name: Delete old workflow runs
         uses: Mattraks/delete-workflow-runs@v2
