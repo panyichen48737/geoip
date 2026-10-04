@@ -337,6 +337,10 @@ jobs:
           rm -rf ./tmp* ./output*
 
       - name: Sanity check outputs
+        env:
+          # 下面取基线要走 API，带 token 才够用：未认证是 60 次/小时、按 IP 算，托管 runner 的
+          # 出口 IP 是共用的，一次构建就要发 9 个请求。
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           status=0
           for f in ./data/games ./data/media ./data/cn ./ips/* ./mihomo-geodata/* ./sing-box-geodata/*; do
@@ -359,13 +363,22 @@ jobs:
           # cn_ipv4.txt 与 cnip_ipv4.txt、cn_ipv6.txt 与 cnip_ipv6.txt 是逐字节相同的别名
           # （blob SHA 相同），cnip.txt 是 cnip.list 的另一种格式、同一批条目 —— 都随
           # cnip.list 一起守住了，不必重复列。
+          # 基线走 API、不走 raw.githubusercontent：raw 是 CDN，会滞后喂上一版甚至上上版，
+          # 而基线偏小会让守卫**变宽松** —— 上一版涨了、这一版跌回来，这段跌幅被陈旧的基线
+          # 吃掉，正好是它要拦的那种静默缩水。API 读的是分支头，没有这层缓存。
+          # 要 raw 媒体类型是为大小：contents 接口只对 ≤1 MB 的文件支持 base64 那套，1–100 MB
+          # 必须显式要 raw（当前最大的 cnip.list 才 533 KB，但别在这儿留个悬崖）。
           for spec in cnip.list:80 cn-asn.list:80 netflixip.list:80 mediaip.list:80 \
                       gamesip.list:50 privateip.list:50 telegramip.list:50 \
                       netflix-asn.list:50 telegram-asn.list:50; do
             name=${spec%%:*}
             pct=${spec##*:}
             # `--retry 3`：取不到就只是跳过守卫，一次网络抖动不该让守卫静默失效。
-            if curl -fsSL --retry 3 --max-time 60 "https://raw.githubusercontent.com/${{ github.repository }}/ips/${name}" -o /tmp/previous.list; then
+            if curl -fsSL --retry 3 --max-time 60 \
+              -H "Authorization: Bearer ${TOKEN}" \
+              -H "Accept: application/vnd.github.raw+json" \
+              "https://api.github.com/repos/${{ github.repository }}/contents/${name}?ref=ips" \
+              -o /tmp/previous.list; then
               previous=$(wc -l < /tmp/previous.list)
               current=$(wc -l < "./ips/${name}")
               floor=$(( previous * pct / 100 ))
