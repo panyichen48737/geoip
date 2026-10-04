@@ -480,20 +480,18 @@ jobs:
           # 自己过期。所以它不该有判死构建的权力 —— 2026-10-02T05:30 那次就是这里
           # `curl: (35) Recv failure: Connection reset by peer` 把一次第 1-21 步全绿、三个分支
           # 都已推送成功的构建判成了红的，还连累后面 `Delete old workflow runs` 被 skip。
-          # 三个目录加起来是 28 个顺序请求，每个都是一次瞬时故障的机会，所以既加
-          # `--retry 3 --max-time 30`，也用 `||` 兜底：失败只警告。
+          # 三个目录加起来是 28 个请求，瓶颈是逐个请求的往返延迟，所以 4 路并行。每个请求仍是
+          # 一次瞬时故障的机会，故保留 `--retry 3 --max-time 30` 和 `||` 兜底：失败只警告。
+          purge_one() {
+            curl -i --retry 3 --max-time 30 "https://purge.jsdelivr.net/gh/${{ github.repository }}@$1/$2" || echo "::warning::purge 失败：$1/$2"
+          }
+          export -f purge_one
           cd ./ips/ || exit 1
-          for file in $(ls); do
-            curl -i --retry 3 --max-time 30 "https://purge.jsdelivr.net/gh/${{ github.repository }}@ips/${file}" || echo "::warning::purge 失败：ips/${file}"
-          done
+          printf '%s\0' * | xargs -0 -P 4 -n 1 bash -c 'purge_one ips "$1"' _
           cd ../mihomo-geodata/ || exit 1
-          for file in $(ls); do
-            curl -i --retry 3 --max-time 30 "https://purge.jsdelivr.net/gh/${{ github.repository }}@mihomo-geodata/${file}" || echo "::warning::purge 失败：mihomo-geodata/${file}"
-          done
+          printf '%s\0' * | xargs -0 -P 4 -n 1 bash -c 'purge_one mihomo-geodata "$1"' _
           cd ../sing-box-geodata/ || exit 1
-          for file in $(ls); do
-            curl -i --retry 3 --max-time 30 "https://purge.jsdelivr.net/gh/${{ github.repository }}@sing-box-geodata/${file}" || echo "::warning::purge 失败：sing-box-geodata/${file}"
-          done
+          printf '%s\0' * | xargs -0 -P 4 -n 1 bash -c 'purge_one sing-box-geodata "$1"' _
 
       # 数据更新完主动通知 ruleset_geodata 重建，避免它 03:00 的定时跑在这批数据之前。
       # 只在成功构建里发（前序步骤失败时本步骤本就不会执行），且跳过 push / PR —— 那些是
