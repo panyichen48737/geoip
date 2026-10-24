@@ -25,6 +25,7 @@ on:
 permissions:
   contents: write
   actions: write
+  issues: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -524,3 +525,23 @@ jobs:
           repository: ${{ github.repository }}
           retain_days: 3
           keep_minimum_runs: 1
+
+      # 失败只落在 Actions 列表里就没人看见（domain-list 那轮连红三天没人发现）。
+      # 失败时开一个 issue（已有开着的就补一条评论），让它进 GitHub 的通知里。
+      # 写 issue 用 GITHUB_TOKEN，需要 issues: write；PR 触发的运行拿不到这个权限，跳过。
+      - name: Report failure
+        if: failure() && github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TITLE: 构建失败：${{ github.workflow }}
+        run: |
+          url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          printf '运行：%s\n触发：%s\n提交：%s\n' "${url}" "${GITHUB_EVENT_NAME}" "${GITHUB_SHA:0:7}" > "${RUNNER_TEMP}/failure.md"
+          # 标题固定，所以同一类失败只留一个开着的 issue，重复失败追加评论。
+          number=$(gh issue list --repo "${GITHUB_REPOSITORY}" --state open --limit 100 \
+            --json number,title --jq "[.[] | select(.title == \"${TITLE}\")][0].number // empty" || true)
+          if [ -n "${number}" ]; then
+            gh issue comment "${number}" --repo "${GITHUB_REPOSITORY}" --body-file "${RUNNER_TEMP}/failure.md"
+          else
+            gh issue create --repo "${GITHUB_REPOSITORY}" --title "${TITLE}" --body-file "${RUNNER_TEMP}/failure.md"
+          fi
